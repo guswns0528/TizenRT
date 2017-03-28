@@ -26,7 +26,8 @@
  ****************************************************************************/
 #define LOGM_TASK_PRORITY CONFIG_LOGM_TASK_PRIORITY
 #define LOGM_TASK_STACKSIZE CONFIG_LOGM_TASK_STACKSIZE
-#ifdef LOGM_DEBUG
+
+#ifdef CONFIG_LOGM_DEBUG
 #define lmdbg(format, ...)    printf(format, ##__VA_ARGS__)
 #else
 #define lmdbg(format, ...)
