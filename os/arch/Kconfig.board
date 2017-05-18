@@ -25,12 +25,19 @@ config ARCH_BOARD_SIDK_S5JT200
 	select ARCH_HAVE_IRQBUTTONS
 	---help---
 		Samsung S5JT200 IoT wifi MCU
+
+config ARCH_BOARD_MIKROEQUAIL
+        bool "Mikroe Quail board"
+        depends on ARCH_CHIP_STM32F4
+        ---help---
+                Mikroe Quail Board
 endchoice
 
 config ARCH_BOARD
 	string
 	default "artik053" if ARCH_BOARD_ARTIK053
 	default "sidk_s5jt200" if ARCH_BOARD_SIDK_S5JT200
+    default "mikroequail" if ARCH_BOARD_MIKROEQUAIL
 
 comment "Common Board Options"
 
@@ -160,4 +167,6 @@ endif
 if ARCH_BOARD_SIDK_S5JT200
 source arch/arm/src/sidk_s5jt200/Kconfig
 endif
-
+if ARCH_BOARD_MIKROEQUAIL
+source arch/arm/src/mikroequail/Kconfig
+endif

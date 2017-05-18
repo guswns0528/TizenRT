@@ -1,0 +1,92 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "ST Micro STM32F4xx Chip Configuration Options"
+
+choice
+	prompt "ST Micro Chip Selection"
+	default ARCH_CHIP_STM32F427
+
+config ARCH_CHIP_STM32F427
+	bool "STM32F4 "
+	depends on ARCH_CHIP_STM32F4
+	select STM32_STM32F427
+	select ARCH_CORTEXM4
+	select ARMV7M_ICACHE
+	select ARMV7M_DCACHE
+
+endchoice
+
+config STM32_STM32F427
+	bool
+	default y
+	select STM32_UARTDBG
+	select STM32_UART0
+
+menu "STM32F427 DEBUG UART Configuration"
+config SERIAL_TERMIOS
+	bool
+	default y
+
+config ARCH_HAVE_SERIAL_TERMIOS
+	bool
+	default y
+
+config STM32_HAVE_UARTDBG
+	bool
+	default y
+
+config STM32_HAVE_UART0
+	bool
+	default y
+
+if STM32_HAVE_UARTDBG
+config UARTDBG_RXBUFSIZE
+	int "uartdbg rx buffer size"
+	default 256
+
+config UARTDBG_TXBUFSIZE
+	int "uartdbg tx buffer size"
+	default 256
+
+config UARTDBG_BAUD
+	int "baudrate"
+	default 115200
+
+config UARTDBG_BITS
+	int "uart bits"
+	default 8
+
+config UARTDBG_PARITY
+	int "party bit"
+	default 0
+
+config UARTDBG_2STOP
+	int "stop bit"
+	default 0
+endif
+
+
+config STM32_UARTDBG
+	bool
+	default n
+	select ARCH_HAVE_UARTDBG
+	select STM32_HAVE_UARTDBG
+	select UART0_SERIAL_CONSOLE
+	select UARTDBG_SERIAL_CONSOLE
+
+
+config STM32_UART0
+	bool
+	default n
+	select ARCH_HAVE_UART0
+	select UART0_SERIAL_CONSOLE
+
+config UARTDBG_SERIAL_CONSOLE
+	bool
+	default n
+
+
+endmenu #"STM32 UART Configuration"
