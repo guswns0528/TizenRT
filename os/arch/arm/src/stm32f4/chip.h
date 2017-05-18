@@ -1,0 +1,4 @@
+#ifndef ARCH_ARM_SRC_STM32F4_CHIP_H
+#define ARCH_ARM_SRC_STM32F4_CHIP_H
+
+#endif
