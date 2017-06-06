@@ -40,7 +40,7 @@ HEAD_ASRC = arm_vectors.S
 endif
 
 CMN_ASRCS += arm_head.S up_fpu.S
-CMN_CSRCS += up_doirq.c stm32f4_boot.c
+CMN_CSRCS += up_doirq.c stm32f4_boot.c stm32f4_lowled.c
 
 #CMN_UASRCS =
 #CMN_UCSRCS =
