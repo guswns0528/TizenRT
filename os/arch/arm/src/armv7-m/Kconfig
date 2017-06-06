@@ -19,19 +19,6 @@ config ARMV7M_MEMINIT
 		the memory initialization first, then explicitly call
 		arm_data_initialize().
 
-config ARMV7M_ICACHE
-    bool "Use I-Cache"
-    default n
-
-config ARMV7M_DCACHE
-    bool "Use D-Cache"
-    default n
-
-config ARMV7M_DCACHE_WRITETHROUGH
-    bool "D-Cache Write-Through"
-    default n
-    depends on ARMV7M_DCACHE
-
 choice
 	prompt "Toolchain Selection"
 	default ARMV7M_TOOLCHAIN_GNU_EABIW if HOST_WINDOWS
