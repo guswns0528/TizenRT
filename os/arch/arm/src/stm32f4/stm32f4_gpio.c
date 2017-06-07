@@ -399,4 +399,32 @@ void stm32f4_gpiowrite(uint32_t pinset, bool value)
     }
 }
 
+/****************************************************************************
+ * Name: stm32f4_gpioread
+ *
+ * Description:
+ *   Read one or zero from the selected GPIO pin
+ *
+ ****************************************************************************/
 
+bool stm32f4_gpioread(uint32_t pinset)
+{
+    uint32_t base;
+    unsigned int port;
+    unsigned int pin;
+
+    port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+    if (port < STM32_NGPIO_PORTS)
+    {
+        /* Get the port base address */
+
+        base = g_gpiobase[port];
+
+        /* Get the pin number and return the input state of that pin */
+
+        pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+        return ((getreg32(base + STM32_GPIO_IDR_OFFSET) & (1 << pin)) != 0);
+    }
+
+    return 0;
+}
