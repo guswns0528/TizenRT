@@ -358,4 +358,45 @@ int stm32f4_unconfiggpio(uint32_t cfgset)
     return stm32f4_configgpio(cfgset);
 }
 
+/****************************************************************************
+ * Name: stm32f4_gpiowrite
+ *
+ * Description:
+ *   Write one or zero to the selected GPIO pin
+ *
+ ****************************************************************************/
+
+void stm32f4_gpiowrite(uint32_t pinset, bool value)
+{
+    uint32_t base;
+    uint32_t bit;
+    unsigned int port;
+    unsigned int pin;
+
+    port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+    if (port < STM32_NGPIO_PORTS)
+    {
+        /* Get the port base address */
+
+        base = g_gpiobase[port];
+
+        /* Get the pin number  */
+
+        pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+        /* Set or clear the output on the pin */
+
+        if (value)
+        {
+            bit = GPIO_BSRR_SET(pin);
+        }
+        else
+        {
+            bit = GPIO_BSRR_RESET(pin);
+        }
+
+        putreg32(bit, base + STM32_GPIO_BSRR_OFFSET);
+    }
+}
+
 
