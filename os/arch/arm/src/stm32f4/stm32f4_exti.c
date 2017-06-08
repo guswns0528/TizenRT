@@ -77,4 +77,56 @@ static struct gpio_callback_s g_gpio_callbacks[16];
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Interrupt Service Routines - Dispatchers
+ ****************************************************************************/
+
+#define ALL_ISRS \
+EXTI_ISR(0) \
+EXTI_ISR(1) \
+EXTI_ISR(2) \
+EXTI_ISR(3) \
+EXTI_ISR(4) \
+EXTI_ISR(5) \
+EXTI_ISR(6) \
+EXTI_ISR(7) \
+EXTI_ISR(8) \
+EXTI_ISR(9) \
+EXTI_ISR(10) \
+EXTI_ISR(11) \
+EXTI_ISR(12) \
+EXTI_ISR(13) \
+EXTI_ISR(14) \
+EXTI_ISR(15)
+
+#define EXTI_ISR_NAME(__n) stm32f4_exti##__n##isr
+#define EXTI_ISR(__n) \
+static int EXTI_ISR_NAME(__n)(int irq, void *context, void *arg)    \
+{                                                                   \
+    int ret = OK;                                                   \
+                                                                    \
+    /* Clear the pending interrupt */                               \
+                                                                    \
+    putreg32(1 << __n, STM32_EXTI_PR);                              \
+                                                                    \
+    /* And dispatch the interrupt to the handler */                 \
+                                                                    \
+    if (g_gpio_callbacks[__n].callback != NULL)                     \
+    {                                                               \
+        xcpt_t callback = g_gpio_callbacks[__n].callback;           \
+        void *cbarg = g_gpio_callbacks[__n].arg;                    \
+                                                                    \
+        ret = callback(irq, context, cbarg);                        \
+    }                                                               \
+    return ret;                                                     \
+}
+
+ALL_ISRS
+#undef EXTI_ISR
+#define EXTI_ISR(__n) EXTI_ISR_NAME(__n),
+static xcpt_t exti_handlers[] = {
+    ALL_ISRS
+};
+#undef STM32F4_EXTI_ISR
+#undef ALL_ISRS
 
