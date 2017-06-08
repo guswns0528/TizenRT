@@ -130,3 +130,88 @@ static xcpt_t exti_handlers[] = {
 #undef STM32F4_EXTI_ISR
 #undef ALL_ISRS
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: stm32f4_gpiosetevent
+ *
+ * Description:
+ *   Sets/clears GPIO based event and interrupt triggers.
+ *
+ * Input Parameters:
+ *  - pinset:      GPIO pin configuration
+ *  - risingedge:  Enables interrupt on rising edges
+ *  - fallingedge: Enables interrupt on falling edges
+ *  - event:       Generate event when set
+ *  - func:        When non-NULL, generate interrupt
+ *  - arg:         Argument passed to the interrupt callback
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure indicating the
+ *   nature of the failure.
+ *
+ ****************************************************************************/
+
+int stm32f4_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+        bool event, xcpt_t func, void *arg)
+{
+    uint32_t pin = pinset & GPIO_PIN_MASK;
+    uint32_t exti = STM32_EXTI_BIT(pin);
+    int      irq;
+    xcpt_t   handler;
+
+    /* Select the interrupt handler for this EXTI pin */
+
+    irq     = pin + STM32_IRQ_EXTI0;
+    handler = exti_handlers[pin];
+
+    /* Get the previous GPIO IRQ handler; Save the new IRQ handler. */
+
+    g_gpio_callbacks[pin].callback = func;
+    g_gpio_callbacks[pin].arg      = arg;
+
+    /* Install external interrupt handlers */
+
+    if (func)
+    {
+        irq_attach(irq, handler, NULL);
+        up_enable_irq(irq);
+    }
+    else
+    {
+        up_disable_irq(irq);
+    }
+
+    /* Configure GPIO, enable EXTI line enabled if event or interrupt is
+     * enabled.
+     */
+
+    if (event || func)
+    {
+        pinset |= GPIO_EXTI;
+    }
+
+    stm32f4_configgpio(pinset);
+
+    /* Configure rising/falling edges */
+
+    modifyreg32(STM32_EXTI_RTSR,
+            risingedge ? 0 : exti,
+            risingedge ? exti : 0);
+    modifyreg32(STM32_EXTI_FTSR,
+            fallingedge ? 0 : exti,
+            fallingedge ? exti : 0);
+
+    /* Enable Events and Interrupts */
+
+    modifyreg32(STM32_EXTI_EMR,
+            event ? 0 : exti,
+            event ? exti : 0);
+    modifyreg32(STM32_EXTI_IMR,
+            func ? 0 : exti,
+            func ? exti : 0);
+
+    return OK;
+}
