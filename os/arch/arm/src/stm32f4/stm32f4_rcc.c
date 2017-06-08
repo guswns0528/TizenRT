@@ -646,3 +646,115 @@ static inline void rcc_enableperipherals(void)
 //  rcc_itm_syslog();
 }
 
+/****************************************************************************
+ * Name: stm32_stdclockconfig
+ *
+ * Description:
+ *   Called to change to new clock based on settings in board.h
+ *
+ *   NOTE:  This logic would need to be extended if you need to select low-
+ *   power clocking modes!
+ ****************************************************************************/
+
+static void stm32_stdclockconfig(void)
+{
+  uint32_t regval;
+  volatile int32_t timeout;
+
+  /* Wait until the HSI is ready (or until a timeout elapsed) */
+
+  for (timeout = HSIRDY_TIMEOUT; timeout > 0; timeout--)
+    {
+      /* Check if the HSIRDY flag is the set in the CR */
+
+      if ((getreg32(STM32_RCC_CR) & RCC_CR_HSIRDY) != 0)
+        {
+          /* If so, then break-out with timeout > 0 */
+
+          break;
+        }
+    }
+
+  /* Check for a timeout.  If this timeout occurs, then we are hosed.  We
+   * have no real back-up plan, although the following logic makes it look
+   * as though we do.
+   */
+
+  if (timeout > 0)
+    {
+      /* Select regulator voltage output Scale 1 mode to support system
+       * frequencies up to 168 MHz.
+       */
+
+      regval  = getreg32(STM32_RCC_APB1ENR);
+      regval |= RCC_APB1ENR_PWREN;
+      putreg32(regval, STM32_RCC_APB1ENR);
+
+      regval  = getreg32(STM32_PWR_CR);
+      regval &= ~PWR_CR_VOS_MASK;
+      regval |= PWR_CR_VOS_SCALE_1;
+      putreg32(regval, STM32_PWR_CR);
+
+      /* Set the HCLK source/divider */
+
+      regval  = getreg32(STM32_RCC_CFGR);
+      regval &= ~RCC_CFGR_HPRE_MASK;
+      regval |= STM32_RCC_CFGR_HPRE;
+      putreg32(regval, STM32_RCC_CFGR);
+
+      /* Set the PCLK2 divider */
+
+      regval  = getreg32(STM32_RCC_CFGR);
+      regval &= ~RCC_CFGR_PPRE2_MASK;
+      regval |= STM32_RCC_CFGR_PPRE2;
+      putreg32(regval, STM32_RCC_CFGR);
+
+      /* Set the PCLK1 divider */
+
+      regval  = getreg32(STM32_RCC_CFGR);
+      regval &= ~RCC_CFGR_PPRE1_MASK;
+      regval |= STM32_RCC_CFGR_PPRE1;
+      putreg32(regval, STM32_RCC_CFGR);
+
+      /* Set the PLL dividers and multipliers to configure the main PLL */
+
+      regval = (STM32_PLLCFG_PLLM | STM32_PLLCFG_PLLN | STM32_PLLCFG_PLLP
+                | STM32_PLLCFG_PLLQ
+                | RCC_PLLCFG_PLLSRC_HSI
+                );
+      putreg32(regval, STM32_RCC_PLLCFG);
+
+      /* Enable the main PLL */
+
+      regval  = getreg32(STM32_RCC_CR);
+      regval |= RCC_CR_PLLON;
+      putreg32(regval, STM32_RCC_CR);
+
+      /* Wait until the PLL is ready */
+
+      while ((getreg32(STM32_RCC_CR) & RCC_CR_PLLRDY) == 0)
+        {
+        }
+
+      /* Enable FLASH prefetch, instruction cache, data cache, and 5 wait states */
+
+      regval = (FLASH_ACR_LATENCY_5 | FLASH_ACR_ICEN | FLASH_ACR_DCEN
+                | FLASH_ACR_PRFTEN
+                );
+      putreg32(regval, STM32_FLASH_ACR);
+
+      /* Select the main PLL as system clock source */
+
+      regval  = getreg32(STM32_RCC_CFGR);
+      regval &= ~RCC_CFGR_SW_MASK;
+      regval |= RCC_CFGR_SW_PLL;
+      putreg32(regval, STM32_RCC_CFGR);
+
+      /* Wait until the PLL source is used as the system clock source */
+
+      while ((getreg32(STM32_RCC_CFGR) & RCC_CFGR_SWS_MASK) != RCC_CFGR_SWS_PLL)
+        {
+        }
+    }
+}
+
