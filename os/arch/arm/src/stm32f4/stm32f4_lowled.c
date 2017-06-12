@@ -21,4 +21,14 @@ static void init_led(void)
     GPIOC_MODE |= 0x40;
 }
 
+#define GREEN 0
+#define YELLOW 1
+#define RED 2
+
+int led = GREEN;
+void up_init_lowled(void)
+{
+    assign_gpio_clock();
+    init_led();
+}
 
