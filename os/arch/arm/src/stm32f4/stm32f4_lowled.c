@@ -32,3 +32,24 @@ void up_init_lowled(void)
     init_led();
 }
 
+void toggle_led(void)
+{
+    if (led == GREEN)
+    {
+        GPIOE_BSRR = 0x80000400;
+        led = YELLOW;
+    }
+    else if (led == YELLOW)
+    {
+        GPIOE_BSRR = 0x04000000;
+        GPIOC_BSRR = 0x8;
+        led = RED;
+    }
+    else
+    {
+        GPIOC_BSRR = 0x80000;
+        GPIOE_BSRR = 0x8000;
+        led = GREEN;
+    }
+}
+
