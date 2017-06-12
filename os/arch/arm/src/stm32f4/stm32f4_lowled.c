@@ -7,4 +7,8 @@
 #define GPIOC_PUPDR (*(volatile unsigned int*)0x4002080C)
 #define GPIOC_BSRR (*(volatile unsigned int*)0x40020818)
 
+static void assign_gpio_clock(void)
+{
+    RCC_AHB1ENR |= 0x14;
+}
 
