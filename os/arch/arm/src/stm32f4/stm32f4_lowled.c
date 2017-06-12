@@ -53,3 +53,11 @@ void toggle_led(void)
     }
 }
 
+void tld(void)
+{
+    int i = 0;
+    for (i = 0; i < 16800000/7; i++)
+    {
+    }
+    toggle_led();
+}
