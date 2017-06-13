@@ -22,10 +22,17 @@ endchoice
 config STM32_STM32F427
 	bool
 	default y
-	select STM32_UARTDBG
-	select STM32_UART0
+	select STM32_HAVE_USART1
+	select STM32_HAVE_USART2
+	select STM32_HAVE_USART3
+	select STM32_HAVE_UART4
+	select STM32_HAVE_UART5
+	select STM32_HAVE_USART6
+	select STM32_HAVE_UART7
+	select STM32_HAVE_UART8
 
-menu "STM32F427 DEBUG UART Configuration"
+menu "STM32F4 Peripheral Support"
+
 config SERIAL_TERMIOS
 	bool
 	default y
@@ -34,59 +41,93 @@ config ARCH_HAVE_SERIAL_TERMIOS
 	bool
 	default y
 
-config STM32_HAVE_UARTDBG
-	bool
-	default y
-
-config STM32_HAVE_UART0
-	bool
-	default y
-
-if STM32_HAVE_UARTDBG
-config UARTDBG_RXBUFSIZE
-	int "uartdbg rx buffer size"
-	default 256
-
-config UARTDBG_TXBUFSIZE
-	int "uartdbg tx buffer size"
-	default 256
-
-config UARTDBG_BAUD
-	int "baudrate"
-	default 115200
-
-config UARTDBG_BITS
-	int "uart bits"
-	default 8
-
-config UARTDBG_PARITY
-	int "party bit"
-	default 0
-
-config UARTDBG_2STOP
-	int "stop bit"
-	default 0
-endif
-
-
-config STM32_UARTDBG
+config STM32_HAVE_USART1
 	bool
 	default n
-	select ARCH_HAVE_UARTDBG
-	select STM32_HAVE_UARTDBG
-	select UART0_SERIAL_CONSOLE
-	select UARTDBG_SERIAL_CONSOLE
 
-
-config STM32_UART0
+config STM32_HAVE_USART2
 	bool
 	default n
-	select ARCH_HAVE_UART0
-	select UART0_SERIAL_CONSOLE
 
-config UARTDBG_SERIAL_CONSOLE
+config STM32_HAVE_USART3
+	bool
+	default n
+
+config STM32_HAVE_UART4
+	bool
+	default n
+
+config STM32_HAVE_UART5
+	bool
+	default n
+
+config STM32_HAVE_USART6
+	bool
+	default n
+
+config STM32_HAVE_UART7
+	bool
+	default n
+
+config STM32_HAVE_UART8
 	bool
 	default n
 
 
-endmenu #"STM32 UART Configuration"
+config STM32_USART1
+	bool "USART1"
+	default n
+    depends on STM32_HAVE_USART1
+	select ARCH_HAVE_USART1
+	select USART1_SERIAL_TERMIOS
+
+config STM32_USART2
+	bool "USART2"
+	default n
+    depends on STM32_HAVE_USART2
+	select ARCH_HAVE_USART2
+	select USART2_SERIAL_TERMIOS
+
+config STM32_USART3
+	bool "UART3"
+	default n
+    depends on STM32_HAVE_USART3
+	select ARCH_HAVE_USART3
+	select USART3_SERIAL_TERMIOS
+
+config STM32_UART4
+	bool "UART4"
+	default n
+    depends on STM32_HAVE_UART4
+	select ARCH_HAVE_UART4
+	select UART4_SERIAL_TERMIOS
+
+config STM32_UART5
+	bool "UART5"
+	default n
+    depends on STM32_HAVE_UART5
+	select ARCH_HAVE_UART5
+	select UART5_SERIAL_TERMIOS
+
+config STM32_USART6
+	bool "USART6"
+	default n
+    depends on STM32_HAVE_USART6
+	select ARCH_HAVE_USART6
+	select USART6_SERIAL_TERMIOS
+
+config STM32_UART7
+	bool "UART6"
+	default n
+    depends on STM32_HAVE_UART7
+	select ARCH_HAVE_UART7
+	select UART7_SERIAL_TERMIOS
+
+config STM32_UART8
+	bool "UART8"
+	default n
+    depends on STM32_HAVE_UART8
+	select ARCH_HAVE_UART8
+	select UART8_SERIAL_TERMIOS
+
+endmenu
