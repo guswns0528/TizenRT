@@ -22,4 +22,6 @@ void halt_loop(void)
 
 void arm_boot(void)
 {
+    up_init_lowled();
+    halt_loop();
 }
