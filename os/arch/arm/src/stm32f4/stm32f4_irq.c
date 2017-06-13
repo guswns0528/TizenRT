@@ -190,6 +190,74 @@ static void stm32_dumpnvic(const char *msg, int irq)
 
 
 /****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_irqinitialize
+ ****************************************************************************/
+
+void up_irqinitialize(void)
+{
+    uint32_t regaddr;
+    int num_priority_registers;
+    int i;
+
+    /* Disable all interrupts */
+
+    for (i = 0; i < NR_IRQS - STM32_IRQ_FIRST; i += 32)
+    {
+        putreg32(0xffffffff, NVIC_IRQ_CLEAR(i));
+    }
+
+    /* The standard location for the vector table is at the beginning of FLASH
+     * at address 0x0800:0000.  If we are using the STMicro DFU bootloader, then
+     * the vector table will be offset to a different location in FLASH and we
+     * will need to set the NVIC vector location to this alternative location.
+     */
+
+    putreg32((uint32_t)_vectors, NVIC_VECTAB);
+
+#ifdef CONFIG_ARCH_RAMVECTORS
+    /* If CONFIG_ARCH_RAMVECTORS is defined, then we are using a RAM-based
+     * vector table that requires special initialization.
+     */
+
+    up_ramvec_initialize();
+#endif
+
+    /* Set all interrupts (and exceptions) to the default priority */
+
+    putreg32(DEFPRIORITY32, NVIC_SYSH4_7_PRIORITY);
+    putreg32(DEFPRIORITY32, NVIC_SYSH8_11_PRIORITY);
+    putreg32(DEFPRIORITY32, NVIC_SYSH12_15_PRIORITY);
+
+    /* The NVIC ICTR register (bits 0-4) holds the number of of interrupt
+     * lines that the NVIC supports:
+     *
+     *  0 -> 32 interrupt lines,  8 priority registers
+     *  1 -> 64 "       " "   ", 16 priority registers
+     *  2 -> 96 "       " "   ", 32 priority registers
+     *  ...
+     */
+
+    num_priority_registers = (getreg32(NVIC_ICTR) + 1) * 8;
+
+    /* Now set all of the interrupt lines to the default priority */
+
+    regaddr = NVIC_IRQ0_3_PRIORITY;
+    while (num_priority_registers--)
+    {
+        putreg32(DEFPRIORITY32, regaddr);
+        regaddr += 4;
+    }
+
+    /* currents_regs is non-NULL only while processing an interrupt */
+
+    current_regs = NULL;
+}
+
+/****************************************************************************
  * Name: up_disable_irq
  *
  * Description:
