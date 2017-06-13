@@ -27,7 +27,7 @@ void arm_boot(void)
 
     stm32_clockconfig();
     up_init_lowled();
-
+    stm32f4_lowsetup();
 
     for (dest = (uint8_t*)&_sbss; dest < (uint8_t*)&_ebss; )
     {
@@ -38,6 +38,10 @@ void arm_boot(void)
     {
         *dest++ = *src++;
     }
+
+#if defined(USE_EARLYSERIALINIT)
+    up_earlyserialinit();
+#endif
 
     os_start();
 }
