@@ -32,5 +32,6 @@ void arm_boot(void)
     {
         *dest++ = 0;
     }
-    halt_loop();
+
+    os_start();
 }
