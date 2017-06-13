@@ -255,6 +255,56 @@ void up_irqinitialize(void)
     /* currents_regs is non-NULL only while processing an interrupt */
 
     current_regs = NULL;
+
+    /* Attach the SVCall and Hard Fault exception handlers.  The SVCall
+     * exception is used for performing context switches; The Hard Fault
+     * must also be caught because a SVCall may show up as a Hard Fault
+     * under certain conditions.
+     */
+
+    irq_attach(STM32_IRQ_SVCALL, up_svcall, NULL);
+    irq_attach(STM32_IRQ_HARDFAULT, up_hardfault, NULL);
+
+    /* Set the priority of the SVCall interrupt */
+
+#ifdef CONFIG_ARCH_IRQPRIO
+    /* up_prioritize_irq(STM32_IRQ_PENDSV, NVIC_SYSH_PRIORITY_MIN); */
+#endif
+#ifdef CONFIG_ARMV7M_USEBASEPRI
+    stm32_prioritize_syscall(NVIC_SYSH_SVCALL_PRIORITY);
+#endif
+
+    /* If the MPU is enabled, then attach and enable the Memory Management
+     * Fault handler.
+     */
+
+#ifdef CONFIG_ARM_MPU
+    irq_attach(STM32_IRQ_MEMFAULT, up_memfault, NULL);
+    up_enable_irq(STM32_IRQ_MEMFAULT);
+#endif
+
+    /* Attach all other processor exceptions (except reset and sys tick) */
+
+#ifdef CONFIG_DEBUG_FEATURES
+    irq_attach(STM32_IRQ_NMI, stm32_nmi, NULL);
+#ifndef CONFIG_ARM_MPU
+    irq_attach(STM32_IRQ_MEMFAULT, up_memfault, NULL);
+#endif
+    irq_attach(STM32_IRQ_BUSFAULT, stm32_busfault, NULL);
+    irq_attach(STM32_IRQ_USAGEFAULT, stm32_usagefault, NULL);
+    irq_attach(STM32_IRQ_PENDSV, stm32_pendsv, NULL);
+    irq_attach(STM32_IRQ_DBGMONITOR, stm32_dbgmonitor, NULL);
+    irq_attach(STM32_IRQ_RESERVED, stm32_reserved, NULL);
+#endif
+
+    stm32_dumpnvic("initial", NR_IRQS);
+
+#ifndef CONFIG_SUPPRESS_INTERRUPTS
+
+    /* And finally, enable interrupts */
+
+    irqenable();
+#endif
 }
 
 /****************************************************************************
