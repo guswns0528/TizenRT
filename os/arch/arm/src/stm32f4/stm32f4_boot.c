@@ -22,6 +22,10 @@ void halt_loop(void)
 
 void arm_boot(void)
 {
+    const uint8_t *src;
+    uint8_t *dest;
+
+    stm32_clockconfig();
     up_init_lowled();
     halt_loop();
 }
