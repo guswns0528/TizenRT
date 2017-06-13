@@ -191,6 +191,43 @@ static void stm32_dumpnvic(const char *msg, int irq)
 
 
 /****************************************************************************
+ * Name: up_enable_irq
+ *
+ * Description:
+ *   Enable the IRQ specified by 'irq'
+ *
+ ****************************************************************************/
+
+void up_enable_irq(int irq)
+{
+    uintptr_t regaddr;
+    uint32_t regval;
+    uint32_t bit;
+
+    if (stm32_irqinfo(irq, &regaddr, &bit, NVIC_ENA_OFFSET) == 0)
+    {
+        /* Modify the appropriate bit in the register to enable the interrupt.
+         * For normal interrupts, we need to set the bit in the associated
+         * Interrupt Set Enable register.  For other exceptions, we need to
+         * set the bit in the System Handler Control and State Register.
+         */
+
+        if (irq >= STM32_IRQ_FIRST)
+        {
+            putreg32(bit, regaddr);
+        }
+        else
+        {
+            regval  = getreg32(regaddr);
+            regval |= bit;
+            putreg32(regval, regaddr);
+        }
+    }
+
+    // stm32_dumpnvic("enable", irq);
+}
+
+/****************************************************************************
  * Name: up_ack_irq
  *
  * Description:
