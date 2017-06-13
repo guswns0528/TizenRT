@@ -94,13 +94,13 @@
  *   of the systems.
  *
  ****************************************************************************/
-
+extern void toggle_led(void);
 static int stm32_timerisr(int irq, uint32_t *regs, void *arg)
 {
     /* Process timer interrupt */
 
     sched_process_timer();
-
+    static int i = 0; i++; if (i % 100 == 0) toggle_led();
     return 0;
 }
 
