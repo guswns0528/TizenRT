@@ -28,5 +28,9 @@ void arm_boot(void)
     stm32_clockconfig();
     up_init_lowled();
 
-    os_start();
+    for (dest = (uint8_t*)&_sbss; dest < (uint8_t*)&_ebss; )
+    {
+        *dest++ = 0;
+    }
+    halt_loop();
 }
