@@ -58,10 +58,10 @@
 /* Get a 32-bit version of the default priority */
 
 #define DEFPRIORITY32 \
-  (NVIC_SYSH_PRIORITY_DEFAULT << 24 | \
-   NVIC_SYSH_PRIORITY_DEFAULT << 16 | \
-   NVIC_SYSH_PRIORITY_DEFAULT << 8  | \
-   NVIC_SYSH_PRIORITY_DEFAULT)
+    (NVIC_SYSH_PRIORITY_DEFAULT << 24 | \
+     NVIC_SYSH_PRIORITY_DEFAULT << 16 | \
+     NVIC_SYSH_PRIORITY_DEFAULT << 8  | \
+     NVIC_SYSH_PRIORITY_DEFAULT)
 
 /* Given the address of a NVIC ENABLE register, this is the offset to
  * the corresponding CLEAR ENABLE register.
@@ -81,6 +81,63 @@ extern uint32_t _vectors[];
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: stm32_irqinfo
+ *
+ * Description:
+ *   Given an IRQ number, provide the register and bit setting to enable or
+ *   disable the irq.
+ *
+ ****************************************************************************/
+
+static int stm32_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit,
+        uintptr_t offset)
+{
+    int n;
+
+    DEBUGASSERT(irq >= STM32_IRQ_NMI && irq < NR_IRQS);
+
+    /* Check for external interrupt */
+
+    if (irq >= STM32_IRQ_FIRST)
+    {
+        n        = irq - STM32_IRQ_FIRST;
+        *regaddr = NVIC_IRQ_ENABLE(n) + offset;
+        *bit     = (uint32_t)1 << (n & 0x1f);
+    }
+
+    /* Handle processor exceptions.  Only a few can be disabled */
+
+    else
+    {
+        *regaddr = NVIC_SYSHCON;
+        if (irq == STM32_IRQ_MEMFAULT)
+        {
+            *bit = NVIC_SYSHCON_MEMFAULTENA;
+        }
+        else if (irq == STM32_IRQ_BUSFAULT)
+        {
+            *bit = NVIC_SYSHCON_BUSFAULTENA;
+        }
+        else if (irq == STM32_IRQ_USAGEFAULT)
+        {
+            *bit = NVIC_SYSHCON_USGFAULTENA;
+        }
+        else if (irq == STM32_IRQ_SYSTICK)
+        {
+            *regaddr = NVIC_SYSTICK_CTRL;
+            *bit = NVIC_SYSTICK_CTRL_ENABLE;
+        }
+        else
+        {
+            return ERROR; /* Invalid or unsupported exception */
+        }
+    }
+
+    return OK;
+}
+
 
 /****************************************************************************
  * Name: up_ack_irq
