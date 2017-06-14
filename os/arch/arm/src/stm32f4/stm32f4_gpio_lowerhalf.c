@@ -79,7 +79,22 @@ struct stm32f4_lowerhalf_s {
 	gpio_handler_t handler;
 };
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+#ifndef CONFIG_DISABLE_POLL
+static int stm32f4_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
+{
+	struct stm32f4_lowerhalf_s *lower = (struct stm32f4_lowerhalf_s *)arg;
 
+	if (lower->handler != NULL) {
+		DEBUGASSERT(lower->handler != NULL);
+		lower->handler(lower->parent);
+	}
+
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Private Data
