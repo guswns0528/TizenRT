@@ -446,4 +446,364 @@ static char g_uart8rxbuffer[CONFIG_UART8_RXBUFSIZE];
 static char g_uart8txbuffer[CONFIG_UART8_TXBUFSIZE];
 #endif
 
+/* This describes the state of the STM32 USART1 ports. */
+
+#if defined(CONFIG_STM32_USART1)
+static struct up_dev_s g_usart1priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 1
+        .isconsole = true,
+#endif
+        .recv      =
+        {
+            .size    = CONFIG_USART1_RXBUFSIZE,
+            .buffer  = g_usart1rxbuffer,
+        },
+        .xmit      =
+        {
+            .size    = CONFIG_USART1_TXBUFSIZE,
+            .buffer  = g_usart1txbuffer,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &g_usart1priv,
+    },
+
+    .irq           = STM32_IRQ_USART1,
+    .parity        = CONFIG_USART1_PARITY,
+    .bits          = CONFIG_USART1_BITS,
+    .stopbits2     = CONFIG_USART1_2STOP,
+    .baud          = CONFIG_USART1_BAUD,
+    .apbclock      = STM32_PCLK2_FREQUENCY,
+    .usartbase     = STM32_USART1_BASE,
+    .tx_gpio       = GPIO_USART1_TX,
+    .rx_gpio       = GPIO_USART1_RX,
+#if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_USART1_OFLOWCONTROL)
+    .oflow         = true,
+    .cts_gpio      = GPIO_USART1_CTS,
+#endif
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_USART1_IFLOWCONTROL)
+    .iflow         = true,
+    .rts_gpio      = GPIO_USART1_RTS,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 USART2 port. */
+
+#if defined(CONFIG_STM32_USART2)
+static struct up_dev_s g_usart2priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 2
+        .isconsole = true,
+#endif
+        .recv      =
+        {
+            .size    = CONFIG_USART2_RXBUFSIZE,
+            .buffer  = g_usart2rxbuffer,
+        },
+        .xmit      =
+        {
+            .size    = CONFIG_USART2_TXBUFSIZE,
+            .buffer  = g_usart2txbuffer,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &g_usart2priv,
+    },
+
+    .irq           = STM32_IRQ_USART2,
+    .parity        = CONFIG_USART2_PARITY,
+    .bits          = CONFIG_USART2_BITS,
+    .stopbits2     = CONFIG_USART2_2STOP,
+    .baud          = CONFIG_USART2_BAUD,
+    .apbclock      = STM32_PCLK1_FREQUENCY,
+    .usartbase     = STM32_USART2_BASE,
+    .tx_gpio       = GPIO_USART2_TX,
+    .rx_gpio       = GPIO_USART2_RX,
+#if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_USART2_OFLOWCONTROL)
+    .oflow         = true,
+    .cts_gpio      = GPIO_USART2_CTS,
+#endif
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_USART2_IFLOWCONTROL)
+    .iflow         = true,
+    .rts_gpio      = GPIO_USART2_RTS,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 USART3 port. */
+
+#if defined(CONFIG_STM32_USART3)
+static struct up_dev_s g_usart3priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 3
+        .isconsole = true,
+#endif
+        .recv      =
+        {
+            .size    = CONFIG_USART3_RXBUFSIZE,
+            .buffer  = g_usart3rxbuffer,
+        },
+        .xmit      =
+        {
+            .size    = CONFIG_USART3_TXBUFSIZE,
+            .buffer  = g_usart3txbuffer,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &g_usart3priv,
+    },
+
+    .irq           = STM32_IRQ_USART3,
+    .parity        = CONFIG_USART3_PARITY,
+    .bits          = CONFIG_USART3_BITS,
+    .stopbits2     = CONFIG_USART3_2STOP,
+    .baud          = CONFIG_USART3_BAUD,
+    .apbclock      = STM32_PCLK1_FREQUENCY,
+    .usartbase     = STM32_USART3_BASE,
+    .tx_gpio       = GPIO_USART3_TX,
+    .rx_gpio       = GPIO_USART3_RX,
+#if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_USART3_OFLOWCONTROL)
+    .oflow         = true,
+    .cts_gpio      = GPIO_USART3_CTS,
+#endif
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_USART3_IFLOWCONTROL)
+    .iflow         = true,
+    .rts_gpio      = GPIO_USART3_RTS,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 UART4 port. */
+
+#if defined(CONFIG_STM32_UART4)
+static struct up_dev_s g_uart4priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 4
+        .isconsole = true,
+#endif
+        .recv      =
+        {
+            .size    = CONFIG_UART4_RXBUFSIZE,
+            .buffer  = g_uart4rxbuffer,
+        },
+        .xmit      =
+        {
+            .size    = CONFIG_UART4_TXBUFSIZE,
+            .buffer  = g_uart4txbuffer,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &g_uart4priv,
+    },
+
+    .irq           = STM32_IRQ_UART4,
+    .parity        = CONFIG_UART4_PARITY,
+    .bits          = CONFIG_UART4_BITS,
+    .stopbits2     = CONFIG_UART4_2STOP,
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    .iflow         = false,
+#endif
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    .oflow         = false,
+#endif
+    .baud          = CONFIG_UART4_BAUD,
+    .apbclock      = STM32_PCLK1_FREQUENCY,
+    .usartbase     = STM32_UART4_BASE,
+    .tx_gpio       = GPIO_UART4_TX,
+    .rx_gpio       = GPIO_UART4_RX,
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    .cts_gpio      = 0,
+#endif
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    .rts_gpio      = 0,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 UART5 port. */
+
+#if defined(CONFIG_STM32_UART5)
+static struct up_dev_s g_uart5priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 5
+        .isconsole = true,
+#endif
+        .recv     =
+        {
+            .size   = CONFIG_UART5_RXBUFSIZE,
+            .buffer = g_uart5rxbuffer,
+        },
+        .xmit     =
+        {
+            .size   = CONFIG_UART5_TXBUFSIZE,
+            .buffer = g_uart5txbuffer,
+        },
+        .ops      = &g_uart_ops,
+        .priv     = &g_uart5priv,
+    },
+
+    .irq            = STM32_IRQ_UART5,
+    .parity         = CONFIG_UART5_PARITY,
+    .bits           = CONFIG_UART5_BITS,
+    .stopbits2      = CONFIG_UART5_2STOP,
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    .iflow         = false,
+#endif
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    .oflow         = false,
+#endif
+    .baud           = CONFIG_UART5_BAUD,
+    .apbclock       = STM32_PCLK1_FREQUENCY,
+    .usartbase      = STM32_UART5_BASE,
+    .tx_gpio        = GPIO_UART5_TX,
+    .rx_gpio        = GPIO_UART5_RX,
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    .cts_gpio      = 0,
+#endif
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    .rts_gpio      = 0,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 USART6 port. */
+
+#if defined(CONFIG_STM32_USART6)
+static struct up_dev_s g_usart6priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 6
+        .isconsole = true,
+#endif
+        .recv     =
+        {
+            .size   = CONFIG_USART6_RXBUFSIZE,
+            .buffer = g_usart6rxbuffer,
+        },
+        .xmit     =
+        {
+            .size   = CONFIG_USART6_TXBUFSIZE,
+            .buffer = g_usart6txbuffer,
+        },
+        .ops      = &g_uart_ops,
+        .priv     = &g_usart6priv,
+    },
+
+    .irq            = STM32_IRQ_USART6,
+    .parity         = CONFIG_USART6_PARITY,
+    .bits           = CONFIG_USART6_BITS,
+    .stopbits2      = CONFIG_USART6_2STOP,
+    .baud           = CONFIG_USART6_BAUD,
+    .apbclock       = STM32_PCLK2_FREQUENCY,
+    .usartbase      = STM32_USART6_BASE,
+    .tx_gpio        = GPIO_USART6_TX,
+    .rx_gpio        = GPIO_USART6_RX,
+#if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_USART6_OFLOWCONTROL)
+    .oflow          = true,
+    .cts_gpio       = GPIO_USART6_CTS,
+#endif
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_USART6_IFLOWCONTROL)
+    .iflow          = true,
+    .rts_gpio       = GPIO_USART6_RTS,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 UART7 port. */
+
+#if defined(CONFIG_STM32_UART7)
+static struct up_dev_s g_uart7priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 7
+        .isconsole = true,
+#endif
+        .recv     =
+        {
+            .size   = CONFIG_UART7_RXBUFSIZE,
+            .buffer = g_uart7rxbuffer,
+        },
+        .xmit     =
+        {
+            .size   = CONFIG_UART7_TXBUFSIZE,
+            .buffer = g_uart7txbuffer,
+        },
+        .ops      = &g_uart_ops,
+        .priv     = &g_uart7priv,
+    },
+
+    .irq            = STM32_IRQ_UART7,
+    .parity         = CONFIG_UART7_PARITY,
+    .bits           = CONFIG_UART7_BITS,
+    .stopbits2      = CONFIG_UART7_2STOP,
+    .baud           = CONFIG_UART7_BAUD,
+    .apbclock       = STM32_PCLK1_FREQUENCY,
+    .usartbase      = STM32_UART7_BASE,
+    .tx_gpio        = GPIO_UART7_TX,
+    .rx_gpio        = GPIO_UART7_RX,
+#if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_UART7_OFLOWCONTROL)
+    .oflow          = true,
+    .cts_gpio       = GPIO_UART7_CTS,
+#endif
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_UART7_IFLOWCONTROL)
+    .iflow          = true,
+    .rts_gpio       = GPIO_UART7_RTS,
+#endif
+};
+#endif
+
+/* This describes the state of the STM32 UART8 port. */
+
+#if defined(CONFIG_STM32_UART8)
+static struct up_dev_s g_uart8priv =
+{
+    .dev =
+    {
+#if CONSOLE_UART == 8
+        .isconsole = true,
+#endif
+        .recv     =
+        {
+            .size   = CONFIG_UART8_RXBUFSIZE,
+            .buffer = g_uart8rxbuffer,
+        },
+        .xmit     =
+        {
+            .size   = CONFIG_UART8_TXBUFSIZE,
+            .buffer = g_uart8txbuffer,
+        },
+        .ops      = &g_uart_ops,
+        .priv     = &g_uart8priv,
+    },
+
+    .irq            = STM32_IRQ_UART8,
+    .parity         = CONFIG_UART8_PARITY,
+    .bits           = CONFIG_UART8_BITS,
+    .stopbits2      = CONFIG_UART8_2STOP,
+    .baud           = CONFIG_UART8_BAUD,
+    .apbclock       = STM32_PCLK1_FREQUENCY,
+    .usartbase      = STM32_UART8_BASE,
+    .tx_gpio        = GPIO_UART8_TX,
+    .rx_gpio        = GPIO_UART8_RX,
+#if defined(CONFIG_SERIAL_OFLOWCONTROL) && defined(CONFIG_UART8_OFLOWCONTROL)
+    .oflow          = true,
+    .cts_gpio       = GPIO_UART8_CTS,
+#endif
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_UART8_IFLOWCONTROL)
+    .iflow          = true,
+    .rts_gpio       = GPIO_UART8_RTS,
+#endif
+};
+#endif
+
 
