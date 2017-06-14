@@ -80,6 +80,7 @@ struct stm32f4_lowerhalf_s {
 };
 
 
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -91,4 +92,43 @@ static const struct gpio_ops_s stm32f4_gpio_ops = {
 	.enable = stm32f4_gpio_enable,
 };
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
+/****************************************************************************
+ * Name: stm32f4_gpio_lowerhalf
+ *
+ * Description:
+ *   Instantiate the GPIO lower half driver for the stm32f4.
+ *   General usage:
+ *
+ *     #include <tinyara/gpio.h>
+ *     #include "stm32f4_gpio.h"
+ *
+ *     struct gpio_lowerhalf_s *lower;
+ *     lower = stm32f4_gpio_lowerhalf();
+ *     gpio_register(0, lower);
+ *
+ * Input Parameters:
+ *   pincfg - bit encoded pinmux configuration
+ *
+ * Returned Value:
+ *   On success, a non-NULL GPIO lower interface is returned. Otherwise, NULL.
+ *
+ ****************************************************************************/
+FAR struct gpio_lowerhalf_s *stm32f4_gpio_lowerhalf(uint16_t pincfg)
+{
+	struct stm32f4_lowerhalf_s *lower;
+
+	lower = (struct stm32f4_lowerhalf_s *)
+						kmm_malloc(sizeof(struct stm32f4_lowerhalf_s));
+	if (!lower) {
+		return NULL;
+	}
+
+	lower->pincfg = pincfg;
+	lower->ops    = &stm32f4_gpio_ops;
+
+	return (struct gpio_lowerhalf_s *)lower;
+}
