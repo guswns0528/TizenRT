@@ -95,6 +95,25 @@ static int stm32f4_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 	return OK;
 }
 #endif
+/****************************************************************************
+ * Name: s5j_gpio_get
+ *
+ * Description:
+ *   Get GPIO value
+ *
+ * Input Parameters:
+ *   lower - lowerhalf GPIO driver
+ *
+ * Returned Value:
+ *   >= 0: gpio value
+ *   == -EINVAL: invalid gpio
+ ****************************************************************************/
+static int stm32f4_gpio_get(FAR struct gpio_lowerhalf_s *lower)
+{
+	struct stm32f4_lowerhalf_s *priv = (struct stm32f4_lowerhalf_s *)lower;
+
+	return stm32f4_gpioread(priv->pincfg);
+}
 
 /****************************************************************************
  * Private Data
