@@ -889,4 +889,74 @@ static inline void uart_putreg32(struct up_dev_s *priv, int offset,
     putreg32(value, priv->usartbase + offset);
 }
 
+/****************************************************************************
+ * Name: up_restoreusartint
+ ****************************************************************************/
+
+static void up_restoreusartint(struct up_dev_s *priv, uint16_t ie)
+{
+    uint32_t cr;
+
+    /* Save the interrupt mask */
+
+    priv->ie = ie;
+
+    /* And restore the interrupt state (see the interrupt enable/usage table above) */
+
+    cr = uart_getreg32(priv, STM32_USART_CR1_OFFSET);
+    cr &= ~(USART_CR1_USED_INTS);
+    cr |= (ie & (USART_CR1_USED_INTS));
+    uart_putreg32(priv, STM32_USART_CR1_OFFSET, cr);
+
+    cr = uart_getreg32(priv, STM32_USART_CR3_OFFSET);
+    cr &= ~USART_CR3_EIE;
+    cr |= (ie & USART_CR3_EIE);
+    uart_putreg32(priv, STM32_USART_CR3_OFFSET, cr);
+}
+
+/****************************************************************************
+ * Name: up_disableusartint
+ ****************************************************************************/
+
+static inline void up_disableusartint(struct up_dev_s *priv, uint16_t *ie)
+{
+    if (ie)
+    {
+        uint32_t cr1;
+        uint32_t cr3;
+
+        /* USART interrupts:
+         *
+         * Enable             Status          Meaning                        Usage
+         * ------------------ --------------- ------------------------------ ----------
+         * USART_CR1_IDLEIE   USART_SR_IDLE   Idle Line Detected             (not used)
+         * USART_CR1_RXNEIE   USART_SR_RXNE   Received Data Ready to be Read
+         * "              "   USART_SR_ORE    Overrun Error Detected
+         * USART_CR1_TCIE     USART_SR_TC     Transmission Complete          (used only for RS-485)
+         * USART_CR1_TXEIE    USART_SR_TXE    Transmit Data Register Empty
+         * USART_CR1_PEIE     USART_SR_PE     Parity Error
+         *
+         * USART_CR2_LBDIE    USART_SR_LBD    Break Flag                     (not used)
+         * USART_CR3_EIE      USART_SR_FE     Framing Error
+         * "           "      USART_SR_NE     Noise Error
+         * "           "      USART_SR_ORE    Overrun Error Detected
+         * USART_CR3_CTSIE    USART_SR_CTS    CTS flag                       (not used)
+         */
+
+        cr1 = uart_getreg32(priv, STM32_USART_CR1_OFFSET);
+        cr3 = uart_getreg32(priv, STM32_USART_CR3_OFFSET);
+
+        /* Return the current interrupt mask value for the used interrupts.  Notice
+         * that this depends on the fact that none of the used interrupt enable bits
+         * overlap.  This logic would fail if we needed the break interrupt!
+         */
+
+        *ie = (cr1 & (USART_CR1_USED_INTS)) | (cr3 & USART_CR3_EIE);
+    }
+
+    /* Disable all interrupts */
+
+    up_restoreusartint(priv, 0);
+}
+
 
