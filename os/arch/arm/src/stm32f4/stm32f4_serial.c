@@ -1180,3 +1180,103 @@ static void up_set_apb_clock(struct uart_dev_s *dev, bool on)
     }
 }
 
+/****************************************************************************
+ * Name: up_setup
+ *
+ * Description:
+ *   Configure the USART baud, bits, parity, etc. This method is called the
+ *   first time that the serial port is opened.
+ *
+ ****************************************************************************/
+
+static int up_setup(struct uart_dev_s *dev)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
+#ifndef CONFIG_SUPPRESS_UART_CONFIG
+    uint32_t regval;
+
+    /* Note: The logic here depends on the fact that that the USART module
+     * was enabled in stm32_lowsetup().
+     */
+
+    /* Enable USART APB1/2 clock */
+
+    up_set_apb_clock(dev, true);
+
+    /* Configure pins for USART use */
+
+    stm32f4_configgpio(priv->tx_gpio);
+    stm32f4_configgpio(priv->rx_gpio);
+
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    if (priv->cts_gpio != 0)
+    {
+        stm32f4_configgpio(priv->cts_gpio);
+    }
+#endif
+
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    if (priv->rts_gpio != 0)
+    {
+        uint32_t config = priv->rts_gpio;
+
+#ifdef CONFIG_STM32_FLOWCONTROL_BROKEN
+        /* Instead of letting hw manage this pin, we will bitbang */
+
+        config = (config & ~GPIO_MODE_MASK) | GPIO_OUTPUT;
+#endif
+        stm32f4_configgpio(config);
+    }
+#endif
+
+    /* Configure CR2 */
+    /* Clear STOP, CLKEN, CPOL, CPHA, LBCL, and interrupt enable bits */
+
+    regval  = uart_getreg32(priv, STM32_USART_CR2_OFFSET);
+    regval &= ~(USART_CR2_STOP_MASK | USART_CR2_CLKEN | USART_CR2_CPOL |
+            USART_CR2_CPHA | USART_CR2_LBCL | USART_CR2_LBDIE);
+
+    /* Configure STOP bits */
+
+    if (priv->stopbits2)
+    {
+        regval |= USART_CR2_STOP2;
+    }
+
+    uart_putreg32(priv, STM32_USART_CR2_OFFSET, regval);
+
+    /* Configure CR1 */
+    /* Clear TE, REm and all interrupt enable bits */
+
+    regval  = uart_getreg32(priv, STM32_USART_CR1_OFFSET);
+    regval &= ~(USART_CR1_TE | USART_CR1_RE | USART_CR1_ALLINTS);
+
+    uart_putreg32(priv, STM32_USART_CR1_OFFSET, regval);
+
+    /* Configure CR3 */
+    /* Clear CTSE, RTSE, and all interrupt enable bits */
+
+    regval  = uart_getreg32(priv, STM32_USART_CR3_OFFSET);
+    regval &= ~(USART_CR3_CTSIE | USART_CR3_CTSE | USART_CR3_RTSE | USART_CR3_EIE);
+
+    uart_putreg32(priv, STM32_USART_CR3_OFFSET, regval);
+
+    /* Configure the USART line format and speed. */
+
+    up_set_format(dev);
+
+    /* Enable Rx, Tx, and the USART */
+
+    regval      = uart_getreg32(priv, STM32_USART_CR1_OFFSET);
+    regval     |= (USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
+    uart_putreg32(priv, STM32_USART_CR1_OFFSET, regval);
+
+#endif /* CONFIG_SUPPRESS_UART_CONFIG */
+
+    /* Set up the cached interrupt enables value */
+
+    priv->ie    = 0;
+    return OK;
+}
+
