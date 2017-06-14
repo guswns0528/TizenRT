@@ -116,6 +116,28 @@ static int stm32f4_gpio_get(FAR struct gpio_lowerhalf_s *lower)
 }
 
 /****************************************************************************
+ * Name: stm32f4_gpio_set
+ *
+ * Description:
+ *   Set GPIO value
+ *
+ * Input Parameters:
+ *   lower - lowerhalf GPIO driver
+ *   value - value to set
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static void stm32f4_gpio_set(FAR struct gpio_lowerhalf_s *lower,
+						 FAR unsigned int value)
+{
+	struct stm32f4_lowerhalf_s *priv = (struct stm32f4_lowerhalf_s *)lower;
+
+	stm32f4_gpiowrite(priv->pincfg, value);
+}
+
+/****************************************************************************
  * Private Data
  ****************************************************************************/
 static const struct gpio_ops_s stm32f4_gpio_ops = {
