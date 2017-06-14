@@ -1280,3 +1280,57 @@ static int up_setup(struct uart_dev_s *dev)
     return OK;
 }
 
+/****************************************************************************
+ * Name: up_shutdown
+ *
+ * Description:
+ *   Disable the USART.  This method is called when the serial
+ *   port is closed
+ *
+ ****************************************************************************/
+
+static void up_shutdown(struct uart_dev_s *dev)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    uint32_t regval;
+
+    /* Disable all interrupts */
+
+    up_disableusartint(priv, NULL);
+
+    /* Disable USART APB1/2 clock */
+
+    up_set_apb_clock(dev, false);
+
+    /* Disable Rx, Tx, and the UART */
+
+    regval  = uart_getreg32(priv, STM32_USART_CR1_OFFSET);
+    regval &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
+    uart_putreg32(priv, STM32_USART_CR1_OFFSET, regval);
+
+    /* Release pins. "If the serial-attached device is powered down, the TX
+     * pin causes back-powering, potentially confusing the device to the point
+     * of complete lock-up."
+     *
+     * REVISIT:  Is unconfiguring the pins appropriate for all device?  If not,
+     * then this may need to be a configuration option.
+     */
+
+    stm32f4_unconfiggpio(priv->tx_gpio);
+    stm32f4_unconfiggpio(priv->rx_gpio);
+
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    if (priv->cts_gpio != 0)
+    {
+        stm32f4_unconfiggpio(priv->cts_gpio);
+    }
+#endif
+
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    if (priv->rts_gpio != 0)
+    {
+        stm32f4_unconfiggpio(priv->rts_gpio);
+    }
+#endif
+}
+
