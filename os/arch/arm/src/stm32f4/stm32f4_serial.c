@@ -1386,3 +1386,108 @@ static void up_detach(struct uart_dev_s *dev)
     irq_detach(priv->irq);
 }
 
+/****************************************************************************
+ * Name: up_interrupt
+ *
+ * Description:
+ *   This is the USART interrupt handler.  It will be invoked when an
+ *   interrupt received on the 'irq'  It should call uart_transmitchars or
+ *   uart_receivechar to perform the appropriate data transfers.  The
+ *   interrupt handling logic must be able to map the 'irq' number into the
+ *   appropriate uart_dev_s structure in order to call these functions.
+ *
+ ****************************************************************************/
+
+static int up_interrupt(int irq, void *context, void *arg)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)arg;
+    int  passes;
+    bool handled;
+
+    DEBUGASSERT(priv != NULL);
+
+    /* Report serial activity to the power management logic */
+
+#if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
+    pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
+#endif
+
+    /* Loop until there are no characters to be transferred or,
+     * until we have been looping for a long time.
+     */
+
+    handled = true;
+    for (passes = 0; passes < 256 && handled; passes++)
+    {
+        handled = false;
+
+        /* Get the masked USART status word. */
+
+        priv->sr = uart_getreg32(priv, STM32_USART_SR_OFFSET);
+
+        /* USART interrupts:
+         *
+         * Enable             Status          Meaning                         Usage
+         * ------------------ --------------- ------------------------------- ----------
+         * USART_CR1_IDLEIE   USART_SR_IDLE   Idle Line Detected              (not used)
+         * USART_CR1_RXNEIE   USART_SR_RXNE   Received Data Ready to be Read
+         * "              "   USART_SR_ORE    Overrun Error Detected
+         * USART_CR1_TCIE     USART_SR_TC     Transmission Complete           (used only for RS-485)
+         * USART_CR1_TXEIE    USART_SR_TXE    Transmit Data Register Empty
+         * USART_CR1_PEIE     USART_SR_PE     Parity Error
+         *
+         * USART_CR2_LBDIE    USART_SR_LBD    Break Flag                      (not used)
+         * USART_CR3_EIE      USART_SR_FE     Framing Error
+         * "           "      USART_SR_NE     Noise Error
+         * "           "      USART_SR_ORE    Overrun Error Detected
+         * USART_CR3_CTSIE    USART_SR_CTS    CTS flag                        (not used)
+         *
+         * NOTE: Some of these status bits must be cleared by explicity writing zero
+         * to the SR register: USART_SR_CTS, USART_SR_LBD. Note of those are currently
+         * being used.
+         */
+
+        /* Handle incoming, receive bytes. */
+
+        if ((priv->sr & USART_SR_RXNE) != 0 && (priv->ie & USART_CR1_RXNEIE) != 0)
+        {
+            /* Received data ready... process incoming bytes.  NOTE the check for
+             * RXNEIE:  We cannot call uart_recvchards of RX interrupts are disabled.
+             */
+
+            uart_recvchars(&priv->dev);
+            handled = true;
+        }
+
+        /* We may still have to read from the DR register to clear any pending
+         * error conditions.
+         */
+
+        else if ((priv->sr & (USART_SR_ORE | USART_SR_NE | USART_SR_FE)) != 0)
+        {
+            /* If an error occurs, read from DR to clear the error (data has
+             * been lost).  If ORE is set along with RXNE then it tells you
+             * that the byte *after* the one in the data register has been
+             * lost, but the data register value is correct.  That case will
+             * be handled above if interrupts are enabled. Otherwise, that
+             * good byte will be lost.
+             */
+
+            uart_getreg32(priv, STM32_USART_RDR_OFFSET);
+        }
+
+        /* Handle outgoing, transmit bytes */
+
+        if ((priv->sr & USART_SR_TXE) != 0 && (priv->ie & USART_CR1_TXEIE) != 0)
+        {
+            /* Transmit data register empty ... process outgoing bytes */
+
+            uart_xmitchars(&priv->dev);
+            handled = true;
+        }
+    }
+
+    return OK;
+}
+
+
