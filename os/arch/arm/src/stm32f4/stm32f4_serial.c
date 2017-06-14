@@ -404,3 +404,46 @@ static const struct uart_ops_s g_uart_ops =
     .txempty        = up_txready,
 };
 
+/* I/O buffers */
+
+#if defined(CONFIG_STM32_USART1)
+static char g_usart1rxbuffer[CONFIG_USART1_RXBUFSIZE];
+static char g_usart1txbuffer[CONFIG_USART1_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_USART2)
+static char g_usart2rxbuffer[CONFIG_USART2_RXBUFSIZE];
+static char g_usart2txbuffer[CONFIG_USART2_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_USART3)
+static char g_usart3rxbuffer[CONFIG_USART3_RXBUFSIZE];
+static char g_usart3txbuffer[CONFIG_USART3_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_UART4)
+static char g_uart4rxbuffer[CONFIG_UART4_RXBUFSIZE];
+static char g_uart4txbuffer[CONFIG_UART4_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_UART5)
+static char g_uart5rxbuffer[CONFIG_UART5_RXBUFSIZE];
+static char g_uart5txbuffer[CONFIG_UART5_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_USART6)
+static char g_usart6rxbuffer[CONFIG_USART6_RXBUFSIZE];
+static char g_usart6txbuffer[CONFIG_USART6_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_UART7)
+static char g_uart7rxbuffer[CONFIG_UART7_RXBUFSIZE];
+static char g_uart7txbuffer[CONFIG_UART7_TXBUFSIZE];
+#endif
+
+#if defined(CONFIG_STM32_UART8)
+static char g_uart8rxbuffer[CONFIG_UART8_RXBUFSIZE];
+static char g_uart8txbuffer[CONFIG_UART8_TXBUFSIZE];
+#endif
+
+
