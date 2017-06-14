@@ -137,6 +137,22 @@ static void stm32f4_gpio_set(FAR struct gpio_lowerhalf_s *lower,
 	stm32f4_gpiowrite(priv->pincfg, value);
 }
 
+static int stm32f4_gpio_setdir(FAR struct gpio_lowerhalf_s *lower,
+						   unsigned long arg)
+{
+	struct stm32f4_lowerhalf_s *priv = (struct stm32f4_lowerhalf_s *)lower;
+
+	priv->pincfg &= ~GPIO_MODE_MASK;
+
+	if (arg == GPIO_DIRECTION_OUT) {
+		priv->pincfg |= GPIO_OUTPUT;
+	} else {
+		priv->pincfg |= GPIO_INPUT;
+	}
+
+	return stm32f4_configgpio(priv->pincfg);
+}
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
