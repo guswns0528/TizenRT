@@ -959,4 +959,155 @@ static inline void up_disableusartint(struct up_dev_s *priv, uint16_t *ie)
     up_restoreusartint(priv, 0);
 }
 
+/****************************************************************************
+ * Name: up_set_format
+ *
+ * Description:
+ *   Set the serial line format and speed.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_SUPPRESS_UART_CONFIG
+static void up_set_format(struct uart_dev_s *dev)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    uint32_t usartdiv32;
+    uint32_t mantissa;
+    uint32_t fraction;
+    uint32_t regval;
+    uint32_t brr;
+
+    /* Load CR1 */
+
+    regval = uart_getreg32(priv, STM32_USART_CR1_OFFSET);
+
+    /* This implementation is for U[S]ARTs that support fractional
+     * dividers.
+     *
+     * Configure the USART Baud Rate.  The baud rate for the receiver and
+     * transmitter (Rx and Tx) are both set to the same value as programmed
+     * in the Mantissa and Fraction values of USARTDIV.
+     *
+     *   baud     = fCK / (16 * usartdiv)
+     *   usartdiv = fCK / (16 * baud)
+     *
+     * Where fCK is the input clock to the peripheral (PCLK1 for USART2, 3, 4, 5
+     * or PCLK2 for USART1)
+     *
+     * First calculate (NOTE: all stand baud values are even so dividing by two
+     * does not lose precision):
+     *
+     *   usartdiv32 = 32 * usartdiv = fCK / (baud/2)
+     */
+
+    usartdiv32 = priv->apbclock / (priv->baud >> 1);
+
+    /* The mantissa part is then */
+
+    mantissa   = usartdiv32 >> 5;
+
+    /* The fractional remainder (with rounding) */
+
+    fraction   = (usartdiv32 - (mantissa << 5) + 1) >> 1;
+
+    /* The F4 supports 8 X in oversampling additional to the
+     * standard oversampling by 16.
+     *
+     * With baud rate of fCK / (16 * Divider) for oversampling by 16.
+     * and baud rate of  fCK /  (8 * Divider) for oversampling by 8
+     */
+
+    /* Check if 8x oversampling is necessary */
+
+    if (mantissa == 0)
+    {
+        regval |= USART_CR1_OVER8;
+
+        /* Rescale the mantissa */
+
+        mantissa = usartdiv32 >> 4;
+
+        /* The fractional remainder (with rounding) */
+
+        fraction = (usartdiv32 - (mantissa << 4) + 1) >> 1;
+    }
+    else
+    {
+        /* Use 16x Oversampling */
+
+        regval &= ~USART_CR1_OVER8;
+    }
+
+    brr  = mantissa << USART_BRR_MANT_SHIFT;
+    brr |= fraction << USART_BRR_FRAC_SHIFT;
+
+    uart_putreg32(priv, STM32_USART_CR1_OFFSET, regval);
+    uart_putreg32(priv, STM32_USART_BRR_OFFSET, brr);
+
+    /* Configure parity mode */
+
+    regval &= ~(USART_CR1_PCE | USART_CR1_PS | USART_CR1_M);
+
+    if (priv->parity == 1)       /* Odd parity */
+    {
+        regval |= (USART_CR1_PCE | USART_CR1_PS);
+    }
+    else if (priv->parity == 2)  /* Even parity */
+    {
+        regval |= USART_CR1_PCE;
+    }
+
+    /* Configure word length (parity uses one of configured bits)
+     *
+     * Default: 1 start, 8 data (no parity), n stop, OR
+     *          1 start, 7 data + parity, n stop
+     */
+
+    if (priv->bits == 9 || (priv->bits == 8 && priv->parity != 0))
+    {
+        /* Select: 1 start, 8 data + parity, n stop, OR
+         *         1 start, 9 data (no parity), n stop.
+         */
+
+        regval |= USART_CR1_M;
+    }
+
+    uart_putreg32(priv, STM32_USART_CR1_OFFSET, regval);
+
+    /* Configure STOP bits */
+
+    regval = uart_getreg32(priv, STM32_USART_CR2_OFFSET);
+    regval &= ~(USART_CR2_STOP_MASK);
+
+    if (priv->stopbits2)
+    {
+        regval |= USART_CR2_STOP2;
+    }
+
+    uart_putreg32(priv, STM32_USART_CR2_OFFSET, regval);
+
+    /* Configure hardware flow control */
+
+    regval  = uart_getreg32(priv, STM32_USART_CR3_OFFSET);
+    regval &= ~(USART_CR3_CTSE | USART_CR3_RTSE);
+
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) && \
+    !defined(CONFIG_STM32_FLOWCONTROL_BROKEN)
+    if (priv->iflow && (priv->rts_gpio != 0))
+    {
+        regval |= USART_CR3_RTSE;
+    }
+#endif
+
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    if (priv->oflow && (priv->cts_gpio != 0))
+    {
+        regval |= USART_CR3_CTSE;
+    }
+#endif
+
+    uart_putreg32(priv, STM32_USART_CR3_OFFSET, regval);
+}
+#endif /* CONFIG_SUPPRESS_UART_CONFIG */
+
 
