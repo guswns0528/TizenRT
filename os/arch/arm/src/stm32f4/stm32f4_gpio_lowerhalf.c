@@ -153,6 +153,24 @@ static int stm32f4_gpio_setdir(FAR struct gpio_lowerhalf_s *lower,
 	return stm32f4_configgpio(priv->pincfg);
 }
 
+static int stm32f4_gpio_pull(FAR struct gpio_lowerhalf_s *lower, unsigned long arg)
+{
+	struct stm32f4_lowerhalf_s *priv = (struct stm32f4_lowerhalf_s *)lower;
+
+	priv->pincfg &= ~GPIO_PUPD_MASK;
+
+	if (arg == GPIO_DRIVE_FLOAT) {
+		priv->pincfg |= GPIO_FLOAT;
+	} else if (arg == GPIO_DRIVE_PULLUP) {
+		priv->pincfg |= GPIO_PULLUP;
+	} else if (arg == GPIO_DRIVE_PULLDOWN) {
+		priv->pincfg |= GPIO_PULLDOWN;
+	} else {
+		return -EINVAL;
+	}
+
+	return stm32f4_configgpio(priv->pincfg);
+}
 /****************************************************************************
  * Private Data
  ****************************************************************************/
