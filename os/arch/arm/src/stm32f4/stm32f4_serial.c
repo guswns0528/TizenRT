@@ -806,4 +806,87 @@ static struct up_dev_s g_uart8priv =
 };
 #endif
 
+/* This table lets us iterate over the configured USARTs */
+
+static struct up_dev_s * const uart_devs[STM32_NUSART] =
+{
+#if defined(CONFIG_STM32_USART1)
+    [0] = &g_usart1priv,
+#else
+    [0] = 0,
+#endif
+#if defined(CONFIG_STM32_USART2)
+    [1] = &g_usart2priv,
+#else
+    [1] = 0,
+#endif
+#if defined(CONFIG_STM32_USART3)
+    [2] = &g_usart3priv,
+#else
+    [2] = 0,
+#endif
+#if defined(CONFIG_STM32_UART4)
+    [3] = &g_uart4priv,
+#else
+    [3] = 0,
+#endif
+#if defined(CONFIG_STM32_UART5)
+    [4] = &g_uart5priv,
+#else
+    [4] = 0,
+#endif
+#if defined(CONFIG_STM32_USART6)
+    [5] = &g_usart6priv,
+#else
+    [5] = 0,
+#endif
+#if defined(CONFIG_STM32_UART7)
+    [6] = &g_uart7priv,
+#else
+    [6] = 0,
+#endif
+#if defined(CONFIG_STM32_UART8)
+    [7] = &g_uart8priv,
+#else
+    [7] = 0,
+#endif
+};
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static inline uint32_t uart_getreg8(struct up_dev_s *priv, int offset)
+{
+    return getreg8(priv->usartbase + offset);
+}
+
+static inline void uart_putreg8(struct up_dev_s *priv, int offset,
+        uint32_t value)
+{
+    putreg8(value, priv->usartbase + offset);
+}
+
+static inline uint32_t uart_getreg16(struct up_dev_s *priv, int offset)
+{
+    return getreg16(priv->usartbase + offset);
+}
+
+static inline void uart_putreg16(struct up_dev_s *priv, int offset,
+        uint32_t value)
+{
+    putreg16(value, priv->usartbase + offset);
+}
+
+static inline uint32_t uart_getreg32(struct up_dev_s *priv, int offset)
+{
+    return getreg32(priv->usartbase + offset);
+}
+
+static inline void uart_putreg32(struct up_dev_s *priv, int offset,
+        uint32_t value)
+{
+    putreg32(value, priv->usartbase + offset);
+}
+
 
