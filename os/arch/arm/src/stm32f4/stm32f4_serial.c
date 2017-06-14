@@ -1110,4 +1110,73 @@ static void up_set_format(struct uart_dev_s *dev)
 }
 #endif /* CONFIG_SUPPRESS_UART_CONFIG */
 
+/****************************************************************************
+ * Name: up_set_apb_clock
+ *
+ * Description:
+ *   Enable or disable APB clock for the USART peripheral
+ *
+ * Input parameters:
+ *   dev - A reference to the UART driver state structure
+ *   on  - Enable clock if 'on' is 'true' and disable if 'false'
+ *
+ ****************************************************************************/
+
+static void up_set_apb_clock(struct uart_dev_s *dev, bool on)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    uint32_t rcc_en;
+    uint32_t regaddr;
+
+    /* Determine which USART to configure */
+
+    switch (priv->usartbase)
+    {
+        default:
+            return;
+        case STM32_USART1_BASE:
+            rcc_en = RCC_APB2ENR_USART1EN;
+            regaddr = STM32_RCC_APB2ENR;
+            break;
+        case STM32_USART2_BASE:
+            rcc_en = RCC_APB1ENR_USART2EN;
+            regaddr = STM32_RCC_APB1ENR;
+            break;
+        case STM32_USART3_BASE:
+            rcc_en = RCC_APB1ENR_USART3EN;
+            regaddr = STM32_RCC_APB1ENR;
+            break;
+        case STM32_UART4_BASE:
+            rcc_en = RCC_APB1ENR_UART4EN;
+            regaddr = STM32_RCC_APB1ENR;
+            break;
+        case STM32_UART5_BASE:
+            rcc_en = RCC_APB1ENR_UART5EN;
+            regaddr = STM32_RCC_APB1ENR;
+            break;
+        case STM32_USART6_BASE:
+            rcc_en = RCC_APB2ENR_USART6EN;
+            regaddr = STM32_RCC_APB2ENR;
+            break;
+        case STM32_UART7_BASE:
+            rcc_en = RCC_APB1ENR_UART7EN;
+            regaddr = STM32_RCC_APB1ENR;
+            break;
+        case STM32_UART8_BASE:
+            rcc_en = RCC_APB1ENR_UART8EN;
+            regaddr = STM32_RCC_APB1ENR;
+            break;
+    }
+
+    /* Enable/disable APB 1/2 clock for USART */
+
+    if (on)
+    {
+        modifyreg32(regaddr, 0, rcc_en);
+    }
+    else
+    {
+        modifyreg32(regaddr, rcc_en, 0);
+    }
+}
 
