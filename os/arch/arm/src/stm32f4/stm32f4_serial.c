@@ -1334,3 +1334,55 @@ static void up_shutdown(struct uart_dev_s *dev)
 #endif
 }
 
+/****************************************************************************
+ * Name: up_attach
+ *
+ * Description:
+ *   Configure the USART to operation in interrupt driven mode.  This method is
+ *   called when the serial port is opened.  Normally, this is just after the
+ *   the setup() method is called, however, the serial console may operate in
+ *   a non-interrupt driven mode during the boot phase.
+ *
+ *   RX and TX interrupts are not enabled when by the attach method (unless the
+ *   hardware supports multiple levels of interrupt enabling).  The RX and TX
+ *   interrupts are not enabled until the txint() and rxint() methods are called.
+ *
+ ****************************************************************************/
+
+static int up_attach(struct uart_dev_s *dev)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    int ret;
+
+    /* Attach and enable the IRQ */
+
+    ret = irq_attach(priv->irq, up_interrupt, priv);
+    if (ret == OK)
+    {
+        /* Enable the interrupt (RX and TX interrupts are still disabled
+         * in the USART
+         */
+
+        up_enable_irq(priv->irq);
+    }
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: up_detach
+ *
+ * Description:
+ *   Detach USART interrupts.  This method is called when the serial port is
+ *   closed normally just before the shutdown method is called.  The exception
+ *   is the serial console which is never shutdown.
+ *
+ ****************************************************************************/
+
+static void up_detach(struct uart_dev_s *dev)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    up_disable_irq(priv->irq);
+    irq_detach(priv->irq);
+}
+
