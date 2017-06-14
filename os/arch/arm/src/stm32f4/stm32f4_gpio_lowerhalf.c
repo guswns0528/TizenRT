@@ -171,6 +171,39 @@ static int stm32f4_gpio_pull(FAR struct gpio_lowerhalf_s *lower, unsigned long a
 
 	return stm32f4_configgpio(priv->pincfg);
 }
+
+static int stm32f4_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
+						   int rising, gpio_handler_t handler)
+{
+	struct stm32f4_lowerhalf_s *priv = (struct stm32f4_lowerhalf_s *)lower;
+
+	/* clear function mask */
+	priv->pincfg &= ~GPIO_MODE_MASK;
+
+    if (rising || falling)
+    {
+        priv->pincfg |= GPIO_INPUT | GPIO_EXTI;
+    }
+    else
+    {
+        priv->pincfg |= GPIO_INPUT;
+        handler = NULL;
+    }
+
+	priv->handler = handler;
+
+    if (handler)
+    {
+        stm32f4_gpiosetevent(priv->pincfg, rising, falling, false, stm32f4_gpio_interrupt, priv);
+    }
+    else
+    {
+        stm32f4_gpiosetevent(priv->pincfg, false, false, false, NULL, NULL);
+    }
+
+	return stm32f4_configgpio(priv->pincfg);
+}
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
