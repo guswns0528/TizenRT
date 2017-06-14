@@ -297,3 +297,54 @@
 
 #endif /* HAVE_SERIAL_CONSOLE */
 
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct up_dev_s
+{
+    struct uart_dev_s dev;       /* Generic UART device */
+    uint16_t          ie;        /* Saved interrupt mask bits value */
+    uint16_t          sr;        /* Saved status bits */
+
+    /* If termios are supported, then the following fields may vary at
+     * runtime.
+     */
+
+#ifdef CONFIG_SERIAL_TERMIOS
+    uint8_t           parity;    /* 0=none, 1=odd, 2=even */
+    uint8_t           bits;      /* Number of bits (7 or 8) */
+    bool              stopbits2; /* True: Configure with 2 stop bits instead of 1 */
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    bool              iflow;     /* input flow control (RTS) enabled */
+#endif
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    bool              oflow;     /* output flow control (CTS) enabled */
+#endif
+    uint32_t          baud;      /* Configured baud */
+#else
+    const uint8_t     parity;    /* 0=none, 1=odd, 2=even */
+    const uint8_t     bits;      /* Number of bits (7 or 8) */
+    const bool        stopbits2; /* True: Configure with 2 stop bits instead of 1 */
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    const bool        iflow;     /* input flow control (RTS) enabled */
+#endif
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    const bool        oflow;     /* output flow control (CTS) enabled */
+#endif
+    const uint32_t    baud;      /* Configured baud */
+#endif
+
+    const uint8_t     irq;       /* IRQ associated with this USART */
+    const uint32_t    apbclock;  /* PCLK 1 or 2 frequency */
+    const uint32_t    usartbase; /* Base address of USART registers */
+    const uint32_t    tx_gpio;   /* U[S]ART TX GPIO pin configuration */
+    const uint32_t    rx_gpio;   /* U[S]ART RX GPIO pin configuration */
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    const uint32_t    rts_gpio;  /* U[S]ART RTS GPIO pin configuration */
+#endif
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+    const uint32_t    cts_gpio;  /* U[S]ART CTS GPIO pin configuration */
+#endif
+};
+
