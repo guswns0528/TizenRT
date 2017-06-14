@@ -377,3 +377,30 @@ static int  up_pm_prepare(struct pm_callback_s *cb, int domain,
         enum pm_state_e pmstate);
 #endif
 
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static const struct uart_ops_s g_uart_ops =
+{
+    .setup          = up_setup,
+    .shutdown       = up_shutdown,
+    .attach         = up_attach,
+    .detach         = up_detach,
+    .ioctl          = up_ioctl,
+    .receive        = up_receive,
+    .rxint          = up_rxint,
+    .rxavailable    = up_rxavailable,
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+    .rxflowcontrol  = up_rxflowcontrol,
+#endif
+    .send           = up_send,
+    .txint          = up_txint,
+    .txready        = up_txready,
+    .txempty        = up_txready,
+};
+
