@@ -1855,6 +1855,25 @@ static bool up_txready(struct uart_dev_s *dev)
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: up_lowputc
+ *
+ * Description:
+ *   Output one byte on the serial console
+ *
+ *
+ ****************************************************************************/
+
+void up_lowputc(char ch)
+{
+#if defined(HAVE_SERIAL_CONSOLE)
+    while ((getreg32(STM32_CONSOLE_BASE + STM32_USART_SR_OFFSET) &
+        USART_SR_TXE) == 0);
+
+    putreg32(ch, STM32_CONSOLE_BASE + STM32_USART_TDR_OFFSET);
+#endif /* HAVE_SERIAL_CONSOLE */
+}
+
+/****************************************************************************
  * Name: stm32f4_lowsetup
  *
  * Description:
