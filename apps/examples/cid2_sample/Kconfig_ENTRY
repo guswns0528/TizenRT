@@ -1,0 +1,3 @@
+config ENTRY_CID2_SAMPLE
+	bool "Creative Integrated Design 2 Sample"
+	depends on EXAMPLES_CID2_SAMPLE
