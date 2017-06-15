@@ -1854,6 +1854,36 @@ static bool up_txready(struct uart_dev_s *dev)
  * Public Functions
  ****************************************************************************/
 
+
+
+/****************************************************************************
+ * Name: up_putc
+ *
+ * Description:
+ *   Output one byte on the serial console
+ *
+ * Input Parameters:
+ *   ch - chatacter to output
+ *
+ * Returned Value:
+ *  sent character
+ *
+ ****************************************************************************/
+int up_putc(int ch)
+{
+#if defined(HAVE_SERIAL_CONSOLE)
+    /* Check for LF */
+    if (ch == '\n') {
+        /* Add CR */
+        up_lowputc('\r');
+    }
+
+    up_lowputc(ch);
+#endif
+
+    return ch;
+}
+
 /****************************************************************************
  * Name: up_lowputc
  *
