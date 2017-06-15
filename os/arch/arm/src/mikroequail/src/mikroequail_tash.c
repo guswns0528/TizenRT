@@ -89,37 +89,10 @@
  *   Perform architecture specific initialization
  *
  ****************************************************************************/
-extern void qspi_register(void);
-extern void qspi_get_base(void);
-extern void sdio_drv_register(void);
-//extern void uartdrv_register(void);
-extern void pwmdrv_register(void);
-extern void chipid_register(void);
-extern void clk_print_info_all(unsigned int filter);
-extern uint32_t _vector_start;
-extern void wlbt_if_booting(void);
-extern void pdma_init(void);
+extern uint32_t _vectors;
 
 int board_app_initialize(void)
 {
-	qspi_get_base();
-	qspi_register();
-
-	up_timer_initialize();		//for MCT Test
-
-	clk_print_info_all(-1);
-
-#ifdef CONFIG_EXAMPLES_LDO_TEST
-	register_ldo_drver();
-#endif
-
-	QSPI_print_mode();
-#ifndef CONFIG_BOARD_FOTA_SUPPORT
-	/* Featuring the below code which was trying to modify flash area,
-	 * which is reserved for OTA1 now */
-	HW_REG32(0x04400000, 0x1000) = 0x1234;
-#endif
-
-	lldbg("mikroequail boot from 0x%x\n", &_vector_start);
+	lldbg("mikroequail boot from 0x%x\n", *((uint32_t*)&_vectors + 1));
 	return OK;
 }
