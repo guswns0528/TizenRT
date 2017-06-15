@@ -1669,6 +1669,105 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 }
 
 /****************************************************************************
+ * Name: up_receive
+ *
+ * Description:
+ *   Called (usually) from the interrupt level to receive one
+ *   character from the USART.  Error bits associated with the
+ *   receipt are provided in the return 'status'.
+ *
+ ****************************************************************************/
+
+static int up_receive(struct uart_dev_s *dev, unsigned int *status)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    uint32_t rdr;
+
+    /* Get the Rx byte */
+
+    rdr      = uart_getreg32(priv, STM32_USART_RDR_OFFSET);
+
+    /* Get the Rx byte plux error information.  Return those in status */
+
+    *status  = priv->sr << 16 | rdr;
+    priv->sr = 0;
+
+    /* Then return the actual received byte */
+
+    return rdr & 0xff;
+}
+
+/****************************************************************************
+ * Name: up_rxint
+ *
+ * Description:
+ *   Call to enable or disable RX interrupts
+ *
+ ****************************************************************************/
+
+static void up_rxint(struct uart_dev_s *dev, bool enable)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    irqstate_t flags;
+    uint16_t ie;
+
+    /* USART receive interrupts:
+     *
+     * Enable             Status          Meaning                         Usage
+     * ------------------ --------------- ------------------------------- ----------
+     * USART_CR1_IDLEIE   USART_SR_IDLE   Idle Line Detected              (not used)
+     * USART_CR1_RXNEIE   USART_SR_RXNE   Received Data Ready to be Read
+     * "              "   USART_SR_ORE    Overrun Error Detected
+     * USART_CR1_PEIE     USART_SR_PE     Parity Error
+     *
+     * USART_CR2_LBDIE    USART_SR_LBD    Break Flag                      (not used)
+     * USART_CR3_EIE      USART_SR_FE     Framing Error
+     * "           "      USART_SR_NE     Noise Error
+     * "           "      USART_SR_ORE    Overrun Error Detected
+     */
+
+    flags = irqsave();
+    ie = priv->ie;
+    if (enable)
+    {
+        /* Receive an interrupt when their is anything in the Rx data register (or an Rx
+         * timeout occurs).
+         */
+
+#ifndef CONFIG_SUPPRESS_SERIAL_INTS
+#ifdef CONFIG_USART_ERRINTS
+        ie |= (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR3_EIE);
+#else
+        ie |= USART_CR1_RXNEIE;
+#endif
+#endif
+    }
+    else
+    {
+        ie &= ~(USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR3_EIE);
+    }
+
+    /* Then set the new interrupt state */
+
+    up_restoreusartint(priv, ie);
+    irqrestore(flags);
+}
+
+/****************************************************************************
+ * Name: up_rxavailable
+ *
+ * Description:
+ *   Return true if the receive register is not empty
+ *
+ ****************************************************************************/
+
+static bool up_rxavailable(struct uart_dev_s *dev)
+{
+    struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+    return ((uart_getreg32(priv, STM32_USART_SR_OFFSET) & USART_SR_RXNE) != 0);
+}
+
+/****************************************************************************
  * Name: up_send
  *
  * Description:
@@ -1750,232 +1849,3 @@ static bool up_txready(struct uart_dev_s *dev)
 }
 
 
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: up_earlyserialinit
- *
- * Description:
- *   Performs the low level USART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
- *   before up_serialinit.
- *
- ****************************************************************************/
-
-#ifdef USE_EARLYSERIALINIT
-void up_earlyserialinit(void)
-{
-    unsigned i;
-
-    /* Disable all USART interrupts */
-
-    for (i = 0; i < STM32_NUSART; i++)
-    {
-        if (uart_devs[i])
-        {
-            up_disableusartint(uart_devs[i], NULL);
-        }
-    }
-
-    /* Configure whichever one is the console */
-
-#if defined(HAVE_SERIAL_CONSOLE)
-    CONSOLE_DEV.ops->setup(&CONSOLE_DEV);
-#endif
-}
-#endif
-
-/****************************************************************************
- * Name: up_serialinit
- *
- * Description:
- *   Register serial console and serial ports.  This assumes
- *   that up_earlyserialinit was called previously.
- *
- ****************************************************************************/
-
-void up_serialinit(void)
-{
-    char devname[16];
-    unsigned i;
-    unsigned minor = 0;
-#ifdef CONFIG_PM
-    int ret;
-#endif
-
-    /* Register to receive power management callbacks */
-
-#ifdef CONFIG_PM
-    ret = pm_register(&g_serialcb);
-    DEBUGASSERT(ret == OK);
-    UNUSED(ret);
-#endif
-
-    /* Register the console */
-
-#if CONSOLE_UART > 0
-    uart_register("/dev/console", &CONSOLE_DEV);
-
-#ifndef CONFIG_SERIAL_DISABLE_REORDERING
-    /* If not disabled, register the console UART to ttyS0 and exclude
-     * it from initializing it further down
-     */
-
-    uart_register("/dev/ttyS0", &CONSOLE_DEV);
-    minor = 1;
-#endif
-
-#endif /* CONSOLE_UART > 0 */
-
-    /* Register all remaining USARTs */
-
-    strcpy(devname, "/dev/ttySx");
-
-    for (i = 0; i < STM32_NUSART; i++)
-    {
-        /* Don't create a device for non-configured ports. */
-
-        if (uart_devs[i] == 0)
-        {
-            continue;
-        }
-
-#ifndef CONFIG_SERIAL_DISABLE_REORDERING
-        /* Don't create a device for the console - we did that above */
-
-        if (uart_devs[i]->dev.isconsole)
-        {
-            continue;
-        }
-#endif
-
-        /* Register USARTs as devices in increasing order */
-
-        devname[9] = '0' + minor++;
-        uart_register(devname, &uart_devs[i]->dev);
-    }
-}
-
-/****************************************************************************
- * Name: up_putc
- *
- * Description:
- *   Output one byte on the serial console
- *
- * Input Parameters:
- *   ch - chatacter to output
- *
- * Returned Value:
- *  sent character
- *
- ****************************************************************************/
-int up_putc(int ch)
-{
-#if defined(HAVE_SERIAL_CONSOLE)
-    /* Check for LF */
-    if (ch == '\n') {
-        /* Add CR */
-        up_lowputc('\r');
-    }
-
-    up_lowputc(ch);
-#endif
-
-    return ch;
-}
-
-/****************************************************************************
- * Name: up_lowputc
- *
- * Description:
- *   Output one byte on the serial console
- *
- *
- ****************************************************************************/
-
-void up_lowputc(char ch)
-{
-#if defined(HAVE_SERIAL_CONSOLE)
-    while ((getreg32(STM32_CONSOLE_BASE + STM32_USART_SR_OFFSET) &
-        USART_SR_TXE) == 0);
-
-    putreg32(ch, STM32_CONSOLE_BASE + STM32_USART_TDR_OFFSET);
-#endif /* HAVE_SERIAL_CONSOLE */
-}
-
-/****************************************************************************
- * Name: stm32f4_lowsetup
- *
- * Description:
- *   This performs basic initialization of the USART used for the serial
- *   console.  Its purpose is to get the console output availabe as soon
- *   as possible.
- *
- ****************************************************************************/
-
-void stm32f4_lowsetup(void)
-{
-#if defined(HAVE_SERIAL_CONSOLE) && !defined(CONFIG_SUPPRESS_UART_CONFIG)
-    uint32_t cr;
-#endif
-
-#if defined(HAVE_SERIAL_CONSOLE)
-    /* Enable USART APB1/2 clock */
-
-    modifyreg32(STM32_CONSOLE_APBREG, 0, STM32_CONSOLE_APBEN);
-#endif
-
-    /* Enable the console USART and configure GPIO pins needed for rx/tx.
-     *
-     * NOTE: Clocking for selected U[S]ARTs was already provided in stm32f4_rcc.c
-     */
-
-#ifdef STM32_CONSOLE_TX
-    stm32f4_configgpio(STM32_CONSOLE_TX);
-#endif
-#ifdef STM32_CONSOLE_RX
-    stm32f4_configgpio(STM32_CONSOLE_RX);
-#endif
-
-    /* Enable and configure the selected console device */
-
-#if defined(HAVE_SERIAL_CONSOLE) && !defined(CONFIG_SUPPRESS_UART_CONFIG)
-    /* Configure CR2 */
-
-    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR2_OFFSET);
-    cr &= ~USART_CR2_CLRBITS;
-    cr |= USART_CR2_SETBITS;
-    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR2_OFFSET);
-
-    /* Configure CR1 */
-
-    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
-    cr &= ~USART_CR1_CLRBITS;
-    cr |= USART_CR1_SETBITS;
-    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
-
-    /* Configure CR3 */
-
-    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR3_OFFSET);
-    cr &= ~USART_CR3_CLRBITS;
-    cr |= USART_CR3_SETBITS;
-    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR3_OFFSET);
-
-    /* Configure the USART Baud Rate */
-
-    putreg32(STM32_BRR_VALUE, STM32_CONSOLE_BASE + STM32_USART_BRR_OFFSET);
-
-    /* Select oversampling by 8 */
-
-    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
-
-    /* Enable Rx, Tx, and the USART */
-
-    cr |= (USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
-    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
-
-#endif /* HAVE_SERIAL_CONSOLE && !CONFIG_SUPPRESS_UART_CONFIG */
-}
