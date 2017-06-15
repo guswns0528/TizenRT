@@ -60,11 +60,22 @@
 #include <assert.h>
 
 #include <tinyara/board.h>
+#include <tinyara/gpio.h>
+#include "stm32f4_gpio.h"
 #include <arch/board/board.h>
 
 #include "up_arch.h"
 
 void board_initialize(void)
 {
+    struct gpio_lowerhalf_s *lower = stm32f4_gpio_lowerhalf(GPIO_LED_RED);
+    gpio_register(0, lower);
+
+    lower = stm32f4_gpio_lowerhalf(GPIO_LED_YELLOW);
+    gpio_register(1, lower);
+
+    lower = stm32f4_gpio_lowerhalf(GPIO_LED_GREEN);
+    gpio_register(2, lower);
+
 	board_app_initialize();
 }
