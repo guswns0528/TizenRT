@@ -1490,4 +1490,182 @@ static int up_interrupt(int irq, void *context, void *arg)
     return OK;
 }
 
+/****************************************************************************
+ * Name: up_ioctl
+ *
+ * Description:
+ *   All ioctl calls will be routed through this method
+ *
+ ****************************************************************************/
+
+static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
+{
+#if defined(CONFIG_SERIAL_TERMIOS) || defined(CONFIG_SERIAL_TIOCSERGSTRUCT)
+    struct inode      *inode = filep->f_inode;
+    struct uart_dev_s *dev   = inode->i_private;
+#endif
+#if defined(CONFIG_SERIAL_TERMIOS)
+    struct up_dev_s   *priv  = (struct up_dev_s *)dev->priv;
+#endif
+    int                ret    = OK;
+
+    switch (cmd)
+    {
+#ifdef CONFIG_SERIAL_TIOCSERGSTRUCT
+        case TIOCSERGSTRUCT:
+            {
+                struct up_dev_s *user = (struct up_dev_s *)arg;
+                if (!user)
+                {
+                    ret = -EINVAL;
+                }
+                else
+                {
+                    memcpy(user, dev, sizeof(struct up_dev_s));
+                }
+            }
+            break;
+#endif
+
+#ifdef CONFIG_STM32_USART_SINGLEWIRE
+        case TIOCSSINGLEWIRE:
+            {
+                /* Change the TX port to be open-drain/push-pull and enable/disable
+                 * half-duplex mode.
+                 */
+
+                uint32_t cr = uart_getreg32(priv, STM32_USART_CR3_OFFSET);
+
+#if defined(CONFIG_STM32_STM32F10XX)
+                if (arg == SER_SINGLEWIRE_ENABLED)
+                {
+                    stm32_configgpio((priv->tx_gpio & ~(GPIO_CNF_MASK)) | GPIO_CNF_AFOD);
+                    cr |= USART_CR3_HDSEL;
+                }
+                else
+                {
+                    stm32_configgpio((priv->tx_gpio & ~(GPIO_CNF_MASK)) | GPIO_CNF_AFPP);
+                    cr &= ~USART_CR3_HDSEL;
+                }
+#else
+                if (arg == SER_SINGLEWIRE_ENABLED)
+                {
+                    stm32_configgpio(priv->tx_gpio | GPIO_OPENDRAIN);
+                    cr |= USART_CR3_HDSEL;
+                }
+                else
+                {
+                    stm32_configgpio(priv->tx_gpio | GPIO_PUSHPULL);
+                    cr &= ~USART_CR3_HDSEL;
+                }
+#endif
+
+                uart_putreg32(priv, STM32_USART_CR3_OFFSET, cr);
+            }
+            break;
+#endif
+
+#ifdef CONFIG_SERIAL_TERMIOS
+        case TCGETS:
+            {
+                struct termios *termiosp = (struct termios *)arg;
+
+                if (!termiosp)
+                {
+                    ret = -EINVAL;
+                    break;
+                }
+
+                cfsetispeed(termiosp, priv->baud);
+
+                /* Note that since we only support 8/9 bit modes and
+                 * there is no way to report 9-bit mode, we always claim 8.
+                 */
+
+                termiosp->c_cflag =
+                    ((priv->parity != 0) ? PARENB : 0) |
+                    ((priv->parity == 1) ? PARODD : 0) |
+                    ((priv->stopbits2) ? CSTOPB : 0) |
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+                    ((priv->oflow) ? CCTS_OFLOW : 0) |
+#endif
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+                    ((priv->iflow) ? CRTS_IFLOW : 0) |
+#endif
+                    CS8;
+
+                /* TODO: CCTS_IFLOW, CCTS_OFLOW */
+            }
+            break;
+
+        case TCSETS:
+            {
+                struct termios *termiosp = (struct termios *)arg;
+
+                if (!termiosp)
+                {
+                    ret = -EINVAL;
+                    break;
+                }
+
+                /* Perform some sanity checks before accepting any changes */
+
+                if (((termiosp->c_cflag & CSIZE) != CS8)
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+                        || ((termiosp->c_cflag & CCTS_OFLOW) && (priv->cts_gpio == 0))
+#endif
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+                        || ((termiosp->c_cflag & CRTS_IFLOW) && (priv->rts_gpio == 0))
+#endif
+                   )
+                {
+                    ret = -EINVAL;
+                    break;
+                }
+
+                if (termiosp->c_cflag & PARENB)
+                {
+                    priv->parity = (termiosp->c_cflag & PARODD) ? 1 : 2;
+                }
+                else
+                {
+                    priv->parity = 0;
+                }
+
+                priv->stopbits2 = (termiosp->c_cflag & CSTOPB) != 0;
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+                priv->oflow = (termiosp->c_cflag & CCTS_OFLOW) != 0;
+#endif
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+                priv->iflow = (termiosp->c_cflag & CRTS_IFLOW) != 0;
+#endif
+
+                /* Note that since there is no way to request 9-bit mode
+                 * and no way to support 5/6/7-bit modes, we ignore them
+                 * all here.
+                 */
+
+                /* Note that only cfgetispeed is used because we have knowledge
+                 * that only one speed is supported.
+                 */
+
+                priv->baud = cfgetispeed(termiosp);
+
+                /* Effect the changes immediately - note that we do not implement
+                 * TCSADRAIN / TCSAFLUSH
+                 */
+
+                up_set_format(dev);
+            }
+            break;
+#endif /* CONFIG_SERIAL_TERMIOS */
+
+        default:
+            ret = -ENOTTY;
+            break;
+    }
+
+    return ret;
+}
+
 
