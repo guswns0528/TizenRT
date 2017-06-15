@@ -1849,3 +1849,81 @@ static bool up_txready(struct uart_dev_s *dev)
 }
 
 
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: stm32f4_lowsetup
+ *
+ * Description:
+ *   This performs basic initialization of the USART used for the serial
+ *   console.  Its purpose is to get the console output availabe as soon
+ *   as possible.
+ *
+ ****************************************************************************/
+
+void stm32f4_lowsetup(void)
+{
+#if defined(HAVE_SERIAL_CONSOLE) && !defined(CONFIG_SUPPRESS_UART_CONFIG)
+    uint32_t cr;
+#endif
+
+#if defined(HAVE_SERIAL_CONSOLE)
+    /* Enable USART APB1/2 clock */
+
+    modifyreg32(STM32_CONSOLE_APBREG, 0, STM32_CONSOLE_APBEN);
+#endif
+
+    /* Enable the console USART and configure GPIO pins needed for rx/tx.
+     *
+     * NOTE: Clocking for selected U[S]ARTs was already provided in stm32f4_rcc.c
+     */
+
+#ifdef STM32_CONSOLE_TX
+    stm32f4_configgpio(STM32_CONSOLE_TX);
+#endif
+#ifdef STM32_CONSOLE_RX
+    stm32f4_configgpio(STM32_CONSOLE_RX);
+#endif
+
+    /* Enable and configure the selected console device */
+
+#if defined(HAVE_SERIAL_CONSOLE) && !defined(CONFIG_SUPPRESS_UART_CONFIG)
+    /* Configure CR2 */
+
+    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR2_OFFSET);
+    cr &= ~USART_CR2_CLRBITS;
+    cr |= USART_CR2_SETBITS;
+    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR2_OFFSET);
+
+    /* Configure CR1 */
+
+    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
+    cr &= ~USART_CR1_CLRBITS;
+    cr |= USART_CR1_SETBITS;
+    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
+
+    /* Configure CR3 */
+
+    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR3_OFFSET);
+    cr &= ~USART_CR3_CLRBITS;
+    cr |= USART_CR3_SETBITS;
+    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR3_OFFSET);
+
+    /* Configure the USART Baud Rate */
+
+    putreg32(STM32_BRR_VALUE, STM32_CONSOLE_BASE + STM32_USART_BRR_OFFSET);
+
+    /* Select oversampling by 8 */
+
+    cr  = getreg32(STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
+
+    /* Enable Rx, Tx, and the USART */
+
+    cr |= (USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
+    putreg32(cr, STM32_CONSOLE_BASE + STM32_USART_CR1_OFFSET);
+
+#endif /* HAVE_SERIAL_CONSOLE && !CONFIG_SUPPRESS_UART_CONFIG */
+}
