@@ -1854,6 +1854,38 @@ static bool up_txready(struct uart_dev_s *dev)
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_earlyserialinit
+ *
+ * Description:
+ *   Performs the low level USART initialization early in debug so that the
+ *   serial console will be available during bootup.  This must be called
+ *   before up_serialinit.
+ *
+ ****************************************************************************/
+
+#ifdef USE_EARLYSERIALINIT
+void up_earlyserialinit(void)
+{
+    unsigned i;
+
+    /* Disable all USART interrupts */
+
+    for (i = 0; i < STM32_NUSART; i++)
+    {
+        if (uart_devs[i])
+        {
+            up_disableusartint(uart_devs[i], NULL);
+        }
+    }
+
+    /* Configure whichever one is the console */
+
+#if defined(HAVE_SERIAL_CONSOLE)
+    CONSOLE_DEV.ops->setup(&CONSOLE_DEV);
+#endif
+}
+#endif
 
 
 /****************************************************************************
