@@ -1887,6 +1887,76 @@ void up_earlyserialinit(void)
 }
 #endif
 
+/****************************************************************************
+ * Name: up_serialinit
+ *
+ * Description:
+ *   Register serial console and serial ports.  This assumes
+ *   that up_earlyserialinit was called previously.
+ *
+ ****************************************************************************/
+
+void up_serialinit(void)
+{
+    char devname[16];
+    unsigned i;
+    unsigned minor = 0;
+#ifdef CONFIG_PM
+    int ret;
+#endif
+
+    /* Register to receive power management callbacks */
+
+#ifdef CONFIG_PM
+    ret = pm_register(&g_serialcb);
+    DEBUGASSERT(ret == OK);
+    UNUSED(ret);
+#endif
+
+    /* Register the console */
+
+#if CONSOLE_UART > 0
+    uart_register("/dev/console", &CONSOLE_DEV);
+
+#ifndef CONFIG_SERIAL_DISABLE_REORDERING
+    /* If not disabled, register the console UART to ttyS0 and exclude
+     * it from initializing it further down
+     */
+
+    uart_register("/dev/ttyS0", &CONSOLE_DEV);
+    minor = 1;
+#endif
+
+#endif /* CONSOLE_UART > 0 */
+
+    /* Register all remaining USARTs */
+
+    strcpy(devname, "/dev/ttySx");
+
+    for (i = 0; i < STM32_NUSART; i++)
+    {
+        /* Don't create a device for non-configured ports. */
+
+        if (uart_devs[i] == 0)
+        {
+            continue;
+        }
+
+#ifndef CONFIG_SERIAL_DISABLE_REORDERING
+        /* Don't create a device for the console - we did that above */
+
+        if (uart_devs[i]->dev.isconsole)
+        {
+            continue;
+        }
+#endif
+
+        /* Register USARTs as devices in increasing order */
+
+        devname[9] = '0' + minor++;
+        uart_register(devname, &uart_devs[i]->dev);
+    }
+}
 
 /****************************************************************************
  * Name: up_putc
